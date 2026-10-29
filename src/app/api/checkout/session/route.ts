@@ -25,6 +25,9 @@ export async function POST(request: Request) {
     if (userError || !user) return NextResponse.json({ error: "กรุณาเข้าสู่ระบบก่อนสั่งซื้อ" }, { status: 401 });
 
     const body = await request.json().catch(() => null);
+    if (body?.acceptedPolicies !== true || body?.policyVersion !== "2026-10-30") {
+      return NextResponse.json({ error: "กรุณาอ่านและยอมรับข้อกำหนดการใช้งาน นโยบายความเป็นส่วนตัว และนโยบายคืนเงินก่อนชำระเงิน" }, { status: 400 });
+    }
     const slug = typeof body?.planSlug === "string" ? body.planSlug : "";
     const plan = getStorePlan(slug);
     if (!plan) return NextResponse.json({ error: "ไม่พบแพ็กเกจที่เลือก" }, { status: 400 });
@@ -53,8 +56,8 @@ export async function POST(request: Request) {
           product_data: { name: `IG Snapper — ไลเซนส์ ${plan.name}`, description: `ใช้งาน ${plan.durationDays} วัน · คีย์จะออกเมื่อยืนยันชำระเงินสำเร็จ` },
         },
       }],
-      metadata: { user_id: user.id, plan_slug: plan.slug, order_number: orderNumber, duration_days: String(plan.durationDays) },
-      payment_intent_data: { metadata: { user_id: user.id, plan_slug: plan.slug, order_number: orderNumber } },
+      metadata: { user_id: user.id, plan_slug: plan.slug, order_number: orderNumber, duration_days: String(plan.durationDays), policy_accepted: "true", policy_version: "2026-10-30" },
+      payment_intent_data: { metadata: { user_id: user.id, plan_slug: plan.slug, order_number: orderNumber, policy_accepted: "true", policy_version: "2026-10-30" } },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancel?plan=${encodeURIComponent(plan.slug)}`,
     });
