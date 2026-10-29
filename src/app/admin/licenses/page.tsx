@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import { PageHeading } from "@/components/ui/page-heading";
-import { DemoBanner } from "@/components/ui/demo-banner";
 import { AdminLicenses } from "@/components/features/admin-licenses";
+import { AdminDataWarning } from "@/components/features/admin-data-warning";
 import { data } from "@/lib/data";
-import { t } from "@/i18n";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "ผู้ดูแล · ไลเซนส์" };
 
 export default async function AdminLicensesPage() {
-  const [licenses, plans] = await Promise.all([data.listAllLicenses(), data.listAllPlans()]);
-  return (<><DemoBanner>{t.demo.bannerAdmin} ระบบไลเซนส์จริงใน Supabase ไม่ถูกแตะต้อง</DemoBanner><PageHeading crumbs={[{ label: "ผู้ดูแล", href: "/admin" }, { label: "ไลเซนส์" }]} title="จัดการไลเซนส์" description="ค้นหา ตรวจสอบสถานะ และจำลองการออก เพิกถอน รีเซ็ต หรือขยายอายุไลเซนส์" /><AdminLicenses licenses={licenses} plans={plans} /></>);
+  try {
+    const licenses = await data.listAllLicenses();
+    return <><PageHeading crumbs={[{ label: "ผู้ดูแล", href: "/admin" }, { label: "ไลเซนส์" }]} title="จัดการไลเซนส์" description="ค้นหา ตรวจสอบสถานะ ขยายอายุ เพิกถอน หรือรีเซ็ตการเปิดใช้งาน" /><AdminLicenses licenses={licenses} /></>;
+  } catch (error) {
+    console.error("Admin license page failed", error);
+    return <><PageHeading crumbs={[{ label: "ผู้ดูแล", href: "/admin" }, { label: "ไลเซนส์" }]} title="จัดการไลเซนส์" /><AdminDataWarning /></>;
+  }
 }

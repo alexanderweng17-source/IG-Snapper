@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import { PageHeading } from "@/components/ui/page-heading";
-import { DemoBanner } from "@/components/ui/demo-banner";
 import { AdminCustomers } from "@/components/features/admin-customers";
+import { AdminDataWarning } from "@/components/features/admin-data-warning";
 import { data } from "@/lib/data";
-import { t } from "@/i18n";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "ผู้ดูแล · ลูกค้า" };
 
 export default async function AdminCustomersPage() {
-  const customers = await data.listCustomers();
-  return (<><DemoBanner>{t.demo.bannerAdmin}</DemoBanner><PageHeading crumbs={[{ label: "ผู้ดูแล", href: "/admin" }, { label: "ลูกค้า" }]} title="จัดการลูกค้า" /><AdminCustomers customers={customers} /></>);
+  try {
+    const customers = await data.listCustomers();
+    return <><PageHeading crumbs={[{ label: "ผู้ดูแล", href: "/admin" }, { label: "ลูกค้า" }]} title="จัดการลูกค้า" description="รายชื่อลูกค้าจาก Supabase Auth และยอดซื้อจากคำสั่งซื้อจริง" /><AdminCustomers customers={customers} /></>;
+  } catch (error) {
+    console.error("Admin customers page failed", error);
+    return <><PageHeading crumbs={[{ label: "ผู้ดูแล", href: "/admin" }, { label: "ลูกค้า" }]} title="จัดการลูกค้า" /><AdminDataWarning /></>;
+  }
 }

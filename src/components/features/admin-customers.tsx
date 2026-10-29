@@ -36,7 +36,7 @@ export function AdminCustomers({ customers }: { customers: Customer[] }) {
         </>
       )}
       <Modal open={!!sel} onClose={() => setSel(null)} variant="drawer" title={sel?.name ?? ""} description={sel?.email}>
-        {sel && <dl className="space-y-3 text-sm">{([["สมัครเมื่อ", formatDate(sel.joinedAt)], ["คำสั่งซื้อทั้งหมด", String(sel.orders)], ["ไลเซนส์ที่ใช้งานได้", String(sel.activeLicenses)], ["ยอดชำระรวม", formatTHB(sel.totalSpentSatang)]] as const).map(([k, v]) => <div key={k} className="flex justify-between border-b border-line/10 pb-3"><dt className="text-muted">{k}</dt><dd>{v}</dd></div>)}<p className="pt-2 text-xs text-faint">ข้อมูลตัวอย่าง</p></dl>}
+        {sel && <dl className="space-y-3 text-sm">{([["สมัครเมื่อ", formatDate(sel.joinedAt)], ["คำสั่งซื้อทั้งหมด", String(sel.orders)], ["ไลเซนส์ที่ใช้งานได้", String(sel.activeLicenses)], ["ยอดชำระรวม", formatTHB(sel.totalSpentSatang)]] as const).map(([k, v]) => <div key={k} className="flex justify-between border-b border-line/10 pb-3"><dt className="text-muted">{k}</dt><dd>{v}</dd></div>)}<p className="pt-2 text-xs text-faint">ยอดใช้จ่ายคำนวณจากคำสั่งซื้อที่ชำระเงินสำเร็จ</p></dl>}
       </Modal>
     </Card>
   );

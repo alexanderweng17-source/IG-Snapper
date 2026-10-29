@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { FileText, ReceiptText } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PaymentStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { Pagination, paginate } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
 import { ToolbarSelect } from "@/components/ui/field";
 import { EmptyState } from "@/components/ui/states";
-import { useToast } from "@/components/ui/toast";
 import { formatDate, formatDateTime, formatTHB } from "@/lib/utils";
 import { t } from "@/i18n";
 import type { Order, PaymentStatus } from "@/lib/data/types";
@@ -21,7 +20,6 @@ export function OrdersTable({ orders, admin = false }: { orders: Order[]; admin?
   const [q, setQ] = useState(""); const [status, setStatus] = useState<"all" | PaymentStatus>("all");
   const [sort, setSort] = useState<"new" | "old" | "high" | "low">("new"); const [page, setPage] = useState(1);
   const [sel, setSel] = useState<Order | null>(null);
-  const toast = useToast();
 
   const rows = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -83,8 +81,7 @@ export function OrdersTable({ orders, admin = false }: { orders: Order[]; admin?
         </>
       )}
 
-      <Modal open={!!sel} onClose={() => setSel(null)} variant="drawer" title={sel ? `คำสั่งซื้อ ${sel.number}` : ""} description="ข้อมูลตัวอย่าง"
-        footer={sel && <Button variant="secondary" disabled><FileText className="size-4" aria-hidden />ใบเสร็จ/ใบกำกับภาษี (ยังไม่เปิดให้บริการ)</Button>}>
+      <Modal open={!!sel} onClose={() => setSel(null)} variant="drawer" title={sel ? `คำสั่งซื้อ ${sel.number}` : ""} description="รายละเอียดคำสั่งซื้อจากฐานข้อมูล">
         {sel && (
           <dl className="space-y-4 text-sm">
             {([
@@ -98,7 +95,6 @@ export function OrdersTable({ orders, admin = false }: { orders: Order[]; admin?
             ] as [string, React.ReactNode][]).map(([k, v]) => (
               <div key={k} className="flex items-center justify-between gap-4 border-b border-line/10 pb-3"><dt className="text-muted">{k}</dt><dd className="text-right">{v}</dd></div>
             ))}
-            {admin && <Button variant="secondary" className="w-full" onClick={() => toast("การกระทำนี้เป็นการจำลอง ยังไม่มีข้อมูลถูกเปลี่ยนแปลงจริง", "info")}>ตรวจสอบกับ Stripe (จำลอง)</Button>}
           </dl>
         )}
       </Modal>

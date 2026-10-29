@@ -1,55 +1,72 @@
-"use client";
-import { useState } from "react";
-import { Card, CardBody } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/field";
+import { AlertTriangle, CheckCircle2, Settings2 } from "lucide-react";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/toast";
+import { formatTHB } from "@/lib/utils";
 import type { Plan } from "@/lib/data/types";
 
-interface Draft { name: string; days: string; price: string; visible: boolean }
+const envNames: Record<string, string> = {
+  "30-days": "STORE_PRICE_30_DAYS_SATANG",
+  "90-days": "STORE_PRICE_90_DAYS_SATANG",
+  "365-days": "STORE_PRICE_365_DAYS_SATANG",
+};
 
-export function AdminProducts({ plans }: { plans: Plan[] }) {
-  const toast = useToast();
-  const [drafts, setDrafts] = useState<Record<string, Draft>>(() => Object.fromEntries(plans.map((p) => [p.id, { name: p.name, days: String(p.durationDays), price: String(p.priceSatang / 100), visible: p.visible }])));
-  const [errors, setErrors] = useState<Record<string, Partial<Record<keyof Draft, string>>>>({});
-  const set = (id: string, patch: Partial<Draft>) => setDrafts((d) => ({ ...d, [id]: { ...d[id], ...patch } }));
-
-  function save(id: string) {
-    const d = drafts[id]; const er: Partial<Record<keyof Draft, string>> = {};
-    if (!d.name.trim()) er.name = "กรุณากรอกชื่อแพ็กเกจ";
-    if (!Number.isInteger(Number(d.days)) || Number(d.days) < 1) er.days = "ต้องเป็นจำนวนวันที่มากกว่า 0";
-    if (!(Number(d.price) >= 0) || d.price.trim() === "") er.price = "กรอกราคาเป็นตัวเลข";
-    setErrors((e) => ({ ...e, [id]: er })); if (Object.keys(er).length) return;
-    toast("บันทึกแพ็กเกจ (จำลอง) — ยังไม่มีข้อมูลถูกเปลี่ยนแปลงจริง", "info");
-  }
+export function AdminProducts({ plans, checkoutEnabled }: { plans: Plan[]; checkoutEnabled: boolean }) {
+  const stripeReady = Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
+  const publicPlans = plans.filter((plan) => plan.visible);
+  const pricesReady = plans.every((plan) => !plan.isPlaceholderPrice);
 
   return (
     <div className="space-y-5">
-      {plans.map((p) => {
-        const d = drafts[p.id]; const er = errors[p.id] ?? {};
-        return (
-          <Card key={p.id}>
-            <CardBody>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2"><h2 className="font-semibold">ไลเซนส์ {p.name}</h2>{p.isPlaceholderPrice && <Badge tone="warning">ราคาตัวอย่าง</Badge>}</div>
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm">
-                  <span className="text-muted">{d.visible ? "แสดงในหน้าราคา" : "ซ่อนจากหน้าราคา"}</span>
-                  <input type="checkbox" role="switch" checked={d.visible} onChange={(e) => set(p.id, { visible: e.target.checked })}
-                    className="h-6 w-11 cursor-pointer appearance-none rounded-full bg-surface-3 transition-colors checked:bg-accent relative before:absolute before:left-0.5 before:top-0.5 before:size-5 before:rounded-full before:bg-white before:transition-transform checked:before:translate-x-5" />
-                </label>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <TextField label="ชื่อแพ็กเกจ" value={d.name} onChange={(e) => set(p.id, { name: e.target.value })} error={er.name} />
-                <TextField label="ระยะเวลา (วัน)" inputMode="numeric" value={d.days} onChange={(e) => set(p.id, { days: e.target.value })} error={er.days} />
-                <TextField label="ราคาที่แสดง (บาท)" inputMode="decimal" value={d.price} onChange={(e) => set(p.id, { price: e.target.value })} error={er.price} />
-              </div>
-              <div className="mt-4 flex justify-end"><Button onClick={() => save(p.id)}>บันทึก (จำลอง)</Button></div>
-            </CardBody>
-          </Card>
-        );
-      })}
-      <p className="text-sm text-faint">ราคาที่แสดงบนเว็บไซต์ต้องตรงกับราคาที่กำหนดใน Stripe เมื่อเชื่อมต่อจริง ระบบหลังบ้านต้องเป็นผู้กำหนดราคาที่ชำระ ไม่ใช่เบราว์เซอร์</p>
+      <Card>
+        <CardHeader title="สถานะหน้าร้าน" />
+        <CardBody>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-line/10 bg-surface-2 p-4">
+              <p className="text-sm text-muted">Checkout</p>
+              <div className="mt-2">{checkoutEnabled ? <Badge tone="success"><CheckCircle2 className="size-3.5" />เปิด</Badge> : <Badge tone="warning"><AlertTriangle className="size-3.5" />ปิดอยู่</Badge>}</div>
+            </div>
+            <div className="rounded-lg border border-line/10 bg-surface-2 p-4">
+              <p className="text-sm text-muted">ราคาจริง</p>
+              <div className="mt-2">{pricesReady ? <Badge tone="success">กำหนดแล้ว</Badge> : <Badge tone="warning">ยังมีราคาตัวอย่าง</Badge>}</div>
+            </div>
+            <div className="rounded-lg border border-line/10 bg-surface-2 p-4">
+              <p className="text-sm text-muted">Stripe secrets</p>
+              <div className="mt-2">{stripeReady ? <Badge tone="success">ตั้งค่าแล้ว</Badge> : <Badge tone="warning">ต้องตรวจสอบ</Badge>}</div>
+            </div>
+          </div>
+          {!pricesReady || !stripeReady || !checkoutEnabled ? <p className="mt-4 rounded-md border border-warning/20 bg-warning/5 p-3 text-sm text-muted">
+            <AlertTriangle className="mr-2 inline size-4 text-warning" aria-hidden />
+            ร้านยังไม่พร้อมรับชำระเงิน อย่าเปิด Checkout จนกว่าราคาจะตรงกับ Stripe, ตั้งค่า webhook และทดสอบการชำระเงินครบ
+          </p> : null}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="แพ็กเกจที่กำหนดไว้" />
+        <div className="divide-y divide-line/10">
+          {plans.map((plan) => <div key={plan.id} className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div>
+              <div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold">{plan.name}</h2>{plan.highlight && <Badge tone="accent">แนะนำ</Badge>}{plan.isPlaceholderPrice && <Badge tone="warning">ราคาตัวอย่าง</Badge>}</div>
+              <p className="mt-1 text-sm text-muted">{plan.durationDays} วัน · {plan.tagline}</p>
+              <p className="mt-2 break-all font-mono text-xs text-faint">{envNames[plan.slug] ?? "กำหนดผ่านตัวแปรสภาพแวดล้อม"}</p>
+            </div>
+            <div className="sm:text-right"><p className="text-xl font-semibold tabular-nums">{formatTHB(plan.priceSatang)}</p><p className="mt-1 text-xs text-muted">{plan.visible ? "แสดงบนหน้าราคา" : "ซ่อนจากหน้าราคา"}</p></div>
+          </div>)}
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <div className="flex gap-3">
+          <Settings2 className="mt-0.5 size-5 shrink-0 text-accent" aria-hidden />
+          <div className="space-y-2">
+            <h2 className="font-semibold">แก้ไขราคาและสถานะ Checkout</h2>
+            <p className="text-sm text-muted">ค่าเหล่านี้ถูกอ่านจาก Environment Variables ของ Vercel เพื่อให้ราคาที่หน้าร้านไม่สามารถเปลี่ยนจากเบราว์เซอร์แล้วคิดเงินคนละราคาได้</p>
+            <p className="text-sm text-muted">ใน Vercel → Project <code>ig-snapper</code> → Settings → Environment Variables ให้กำหนดราคาจริงในหน่วยสตางค์: 1 บาท = 100 สตางค์</p>
+            <p className="text-sm text-muted">หลังบันทึกค่า ให้ redeploy โปรเจกต์ ค่าใหม่จึงมีผลกับเว็บที่เผยแพร่</p>
+          </div>
+        </div>
+      </Card>
+      {publicPlans.length === 0 && <p className="text-sm text-muted">ไม่มีแพ็กเกจที่แสดงบนหน้าราคา</p>}
     </div>
   );
 }
