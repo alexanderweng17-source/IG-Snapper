@@ -131,7 +131,7 @@ header{transition:background .3s,box-shadow .3s}header.sc{background:rgba(10,12,
 <header><div class="wrap">
   <a class="logo" href="#home"><span class="lg" aria-hidden="true"><img src="/icon.svg" alt="" /></span>IG Snapper</a>
   <nav aria-label="เมนูหลัก">
-    <a href="#home" data-r="home">หน้าแรก</a><a href="#pricing" data-r="pricing">ราคา</a><a href="#download" data-r="download">ดาวน์โหลด</a><a href="#faq" data-r="faq">FAQ</a><a href="/dashboard" target="_top" data-r="licenses orders">แดชบอร์ด</a><a href="/login" target="_top">เข้าสู่ระบบ</a>
+    <a href="#home" data-r="home">หน้าแรก</a><a href="#pricing" data-r="pricing">ราคา</a><a href="#download" data-r="download">ดาวน์โหลด</a><a href="#faq" data-r="faq">FAQ</a><a id="account-link" href="/dashboard" target="_top" data-r="licenses orders">แดชบอร์ด</a><a id="login-link" href="/login" target="_top">เข้าสู่ระบบ</a><a id="register-link" class="btn p sm" href="/register" target="_top">สมัครสมาชิก</a>
   </nav>
 </div></header>
 <main id="app" class="wrap" tabindex="-1"></main>
@@ -241,6 +241,8 @@ const [r,arg]=h.split('/');const v=views[r]||views.home;$('#app').innerHTML=v(ar
 document.querySelectorAll('nav a[data-r]').forEach(a=>a.classList.toggle('on',a.dataset.r.split(' ').includes(r)));window.scrollTo(0,0);post();reportRoute(r);reportHeight()}
 function reportHeight(){try{parent.postMessage({type:'ig-snapper-preview-height',height:Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)},location.origin)}catch{}}
 function reportRoute(route){try{parent.postMessage({type:'ig-snapper-preview-route',route},location.origin)}catch{}}
+function applyAuthState(state){const login=document.getElementById('login-link');const register=document.getElementById('register-link');const account=document.getElementById('account-link');if(!login||!register||!account)return;const signedIn=Boolean(state&&state.authenticated);login.hidden=signedIn;register.hidden=signedIn;account.textContent=signedIn?'บัญชีของฉัน':'แดชบอร์ด';account.title=signedIn&&state.email?state.email:'';account.setAttribute('aria-label',signedIn?'บัญชีของฉัน':'แดชบอร์ด');}
+addEventListener('message',event=>{if(event.origin!==location.origin||event.data?.type!=='ig-snapper-auth-state')return;applyAuthState(event.data)});
 const heightObserver=new ResizeObserver(()=>requestAnimationFrame(reportHeight));heightObserver.observe(document.documentElement);addEventListener('load',reportHeight);addEventListener('resize',reportHeight);addEventListener('hashchange',reportHeight);
 addEventListener('hashchange',route);route();requestAnimationFrame(reportHeight);loadStorePlans();
 </script>
