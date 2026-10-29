@@ -66,6 +66,7 @@ export function RegisterForm() {
   const [f, setF] = useState({ name: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState<Errors>({}); const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState(""); const [confirmation, setConfirmation] = useState(false);
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
 
   async function submit(e: React.FormEvent) {
@@ -75,6 +76,7 @@ export function RegisterForm() {
     if (!f.email.trim()) er.email = "กรุณากรอกอีเมล"; else if (!isEmail(f.email)) er.email = "รูปแบบอีเมลไม่ถูกต้อง";
     if (f.password.length < 8) er.password = "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร";
     if (f.confirm !== f.password) er.confirm = "รหัสผ่านไม่ตรงกัน";
+    if (!acceptedPolicies) setFormError("กรุณาอ่านและยอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัวก่อนสมัครสมาชิก");
     setErrors(er); setFormError(""); if (Object.keys(er).length) return;
     setLoading(true);
     try {
@@ -109,7 +111,7 @@ export function RegisterForm() {
         <TextField label="อีเมล" type="email" autoComplete="email" inputMode="email" value={f.email} onChange={set("email")} error={errors.email} placeholder="name@example.com" />
         <PasswordField label="รหัสผ่าน" autoComplete="new-password" hint="อย่างน้อย 8 ตัวอักษร" value={f.password} onChange={set("password")} error={errors.password} />
         <PasswordField label="ยืนยันรหัสผ่าน" autoComplete="new-password" value={f.confirm} onChange={set("confirm")} error={errors.confirm} />
-        <p className="text-xs text-faint">การสมัครสมาชิกถือว่าคุณรับทราบ <Link href="/legal/terms" className="text-accent hover:underline">ข้อกำหนด</Link> และ <Link href="/legal/privacy" className="text-accent hover:underline">นโยบายความเป็นส่วนตัว</Link> กรุณาตรวจแก้เอกสารก่อนเปิดขายจริง</p>
+        <label className="flex items-start gap-3 rounded-lg border border-line/10 bg-surface-2/40 p-3 text-sm text-muted"><input type="checkbox" checked={acceptedPolicies} onChange={(e) => setAcceptedPolicies(e.target.checked)} required className="mt-1 size-4 shrink-0 accent-[rgb(var(--accent))]" /><span>ฉันได้อ่านและยอมรับ <Link href="/legal/terms" target="_blank" className="text-accent underline underline-offset-2">ข้อกำหนดการใช้งาน</Link> และรับทราบ <Link href="/legal/privacy" target="_blank" className="text-accent underline underline-offset-2">นโยบายความเป็นส่วนตัว</Link> แล้ว</span></label>
         <Button type="submit" size="lg" className="w-full" loading={loading}>{loading ? "กำลังสร้างบัญชี…" : "สร้างบัญชี"}</Button>
       </form>
     </Shell>
