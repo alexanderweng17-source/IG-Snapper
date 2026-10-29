@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Design tokens (space-separated RGB so Tailwind alpha works) */
+  --bg: 10 12 20;
+  --surface: 16 19 31;
+  --surface-2: 22 26 41;
+  --surface-3: 30 35 55;
+  --line: 255 255 255;
+  --ink: 238 240 248;
+  --muted: 168 174 197;
+  --faint: 132 139 165;
+  --accent: 143 123 255;
+  --accent-strong: 122 99 245;
+  --accent-ink: 13 10 36;
+  --focus: 79 227 255;
+  --success: 74 222 128;
+  --warning: 251 191 36;
+  --danger: 248 113 113;
+  --font-sans: "IBM Plex Sans Thai", "Noto Sans Thai", "Leelawadee UI", "Sukhumvit Set", "Thonburi", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  color-scheme: dark;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-bg font-sans text-ink antialiased;
+    line-height: 1.65; /* Thai needs generous leading */
+  }
+  * { border-color: rgb(var(--line) / 0.09); }
+  ::selection { background: rgb(var(--accent) / 0.35); }
+  :focus-visible { outline: 2px solid rgb(var(--focus)); outline-offset: 2px; border-radius: 6px; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.3; letter-spacing: -0.01em; }
+  p { text-wrap: pretty; }
+}
+
+@layer components {
+  .container-page { @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8; }
+  .skeleton { @apply relative overflow-hidden rounded-md bg-surface-3/70; }
+  .skeleton::after {
+    content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+  .prose-th { @apply max-w-prose text-[15px] text-muted; }
+  .prose-th h2 { @apply mb-2 mt-8 text-lg font-semibold text-ink; }
+  .prose-th p, .prose-th ul { @apply mb-3; }
+  .prose-th ul { @apply list-disc space-y-1 pl-5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
