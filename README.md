@@ -1,6 +1,6 @@
 # IG Snapper storefront
 
-Next.js App Router · TypeScript · Tailwind CSS · Lucide. Customer-facing copy is Thai. The landing page uses the newer HTML preview as its visual reference and is implemented as React/Next.js so the other routes remain available.
+Next.js App Router · TypeScript · Tailwind CSS · Lucide. Customer-facing copy is Thai. The public storefront routes `/`, `/pricing`, `/download`, and `/faq` render the supplied `public/preview.html` directly inside a same-origin frame. Navigation and purchase actions are bridged to the real Next.js routes; the preview/sample dashboard data remains clearly demo-only.
 
 ## Backend status
 
@@ -32,7 +32,7 @@ The project includes a generated `package-lock.json`; install deterministically 
 
 See `.env.example`. Never expose `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, or `STRIPE_WEBHOOK_SECRET` in client-side code or any `NEXT_PUBLIC_*` variable.
 
-`STORE_CHECKOUT_ENABLED` must remain `false` until the test flow works. Configure all three `STORE_PRICE_*_SATANG` values with the actual sale price in satang (1 THB = 100 satang), `NEXT_PUBLIC_SITE_URL`, Supabase URL/publishable key, server-only Supabase secret, and Stripe test secret. After the app is deployed to Vercel, register `https://YOUR_DOMAIN/api/webhooks/stripe` as a Stripe webhook endpoint and subscribe to:
+`STORE_CHECKOUT_ENABLED` must remain `false` until the test flow works. Configure `STORE_PRICE_7_DAYS_SATANG`, `STORE_PRICE_30_DAYS_SATANG`, and `STORE_PRICE_365_DAYS_SATANG` with the actual sale price in satang (1 THB = 100 satang), `NEXT_PUBLIC_SITE_URL`, Supabase URL/publishable key, server-only Supabase secret, and Stripe test secret. After the app is deployed to Vercel, register `https://YOUR_DOMAIN/api/webhooks/stripe` as a Stripe webhook endpoint and subscribe to:
 
 - `checkout.session.completed`
 - `checkout.session.async_payment_succeeded`
@@ -57,10 +57,10 @@ Set Supabase Auth's Site URL and the following redirect URL before testing email
 |---|---|
 | Public | `/` `/pricing` `/download` `/faq` `/legal/terms` `/legal/privacy` `/legal/refunds` |
 | Auth | `/login` `/register` `/forgot-password` `/reset-password` `/auth/callback` |
-| Checkout | `/checkout?plan=30-days\|90-days\|365-days` `/checkout/success` `/checkout/pending` `/checkout/cancel` |
+| Checkout | `/checkout?plan=7-days\|30-days\|365-days` `/checkout/success` `/checkout/pending` `/checkout/cancel` |
 | Customer | `/dashboard` `/dashboard/licenses` `/dashboard/orders` `/dashboard/profile` `/dashboard/support` |
 | Admin | `/admin` `/admin/orders` `/admin/licenses` `/admin/products` `/admin/customers` |
-| API | `POST /api/checkout/session`, `POST /api/webhooks/stripe`, `GET /api/orders/status?session_id=...` |
+| API | `GET /api/store/plans`, `POST /api/checkout/session`, `POST /api/webhooks/stripe`, `GET /api/orders/status?session_id=...` |
 
 ## Before accepting real money
 
@@ -73,4 +73,4 @@ Set Supabase Auth's Site URL and the following redirect URL before testing email
 
 ## Not yet verified
 
-The code could not be built locally because this environment could not resolve `registry.npmjs.org` (EAI_AGAIN) while installing the new packages. No live end-to-end Stripe payment was run. The Vercel connector currently shows no linked projects/teams, and no Vercel deploy has been made from this package yet.
+The production build and TypeScript check should be run before each UI release. No live end-to-end Stripe payment has been run; leave checkout disabled until prices and secrets are confirmed and a test purchase succeeds.

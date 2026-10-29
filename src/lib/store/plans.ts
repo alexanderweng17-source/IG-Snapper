@@ -9,14 +9,15 @@ function priceFromEnv(name: string, placeholder: number): PriceConfig {
   return { value, configured: true };
 }
 
+// Prices mirror the supplied preview only; they remain placeholders until the owner confirms them.
+const p7 = priceFromEnv("STORE_PRICE_7_DAYS_SATANG", 5900);
 const p30 = priceFromEnv("STORE_PRICE_30_DAYS_SATANG", 19900);
-const p90 = priceFromEnv("STORE_PRICE_90_DAYS_SATANG", 49900);
-const p365 = priceFromEnv("STORE_PRICE_365_DAYS_SATANG", 149000);
+const p365 = priceFromEnv("STORE_PRICE_365_DAYS_SATANG", 129000);
 
 export const storePlans: Plan[] = [
-  { id: "plan_30", slug: "30-days", name: "30 วัน", durationDays: 30, priceSatang: p30.value, isPlaceholderPrice: !p30.configured, visible: true, tagline: "ลองใช้งานระยะสั้น" },
-  { id: "plan_90", slug: "90-days", name: "90 วัน", durationDays: 90, priceSatang: p90.value, isPlaceholderPrice: !p90.configured, visible: true, highlight: true, tagline: "เหมาะกับการใช้งานต่อเนื่อง" },
-  { id: "plan_365", slug: "365-days", name: "365 วัน", durationDays: 365, priceSatang: p365.value, isPlaceholderPrice: !p365.configured, visible: true, tagline: "ราคาต่อวันต่ำที่สุด" },
+  { id: "plan_7", slug: "7-days", name: "7 วัน", durationDays: 7, priceSatang: p7.value, isPlaceholderPrice: !p7.configured, visible: true, tagline: "ลองใช้งานก่อนตัดสินใจ" },
+  { id: "plan_30", slug: "30-days", name: "30 วัน", durationDays: 30, priceSatang: p30.value, isPlaceholderPrice: !p30.configured, visible: true, tagline: "เหมาะกับการใช้งานต่อเนื่อง" },
+  { id: "plan_365", slug: "365-days", name: "365 วัน", durationDays: 365, priceSatang: p365.value, isPlaceholderPrice: !p365.configured, visible: true, highlight: true, tagline: "ราคาต่อวันต่ำที่สุด ใช้ยาวทั้งปี" },
 ];
 
 export function getStorePlan(slug: string) {

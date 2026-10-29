@@ -5,8 +5,8 @@ import { formatTHB } from "@/lib/utils";
 import type { Plan } from "@/lib/data/types";
 
 const envNames: Record<string, string> = {
+  "7-days": "STORE_PRICE_7_DAYS_SATANG",
   "30-days": "STORE_PRICE_30_DAYS_SATANG",
-  "90-days": "STORE_PRICE_90_DAYS_SATANG",
   "365-days": "STORE_PRICE_365_DAYS_SATANG",
 };
 

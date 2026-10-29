@@ -1,8 +1,9 @@
-import { HomePreview } from "@/components/features/home-preview";
-import { data } from "@/lib/data";
+import type { Metadata } from "next";
+import { PreviewSiteFrame } from "@/components/features/preview-site-frame";
 
 export const dynamic = "force-dynamic";
-export default async function HomePage() {
-  const plans = await data.listPlans();
-  return <HomePreview plans={plans} />;
+export const metadata: Metadata = { title: "IG Snapper — ผู้ช่วยจัดการผู้ติดตาม Instagram" };
+
+export default function HomePage() {
+  return <PreviewSiteFrame page="home" />;
 }

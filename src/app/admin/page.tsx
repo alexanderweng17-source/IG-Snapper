@@ -30,7 +30,7 @@ export default async function AdminHome() {
     { label: "Supabase server key", ready: Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY), detail: "อ่านข้อมูลคำสั่งซื้อและไลเซนส์" },
     { label: "Stripe API key", ready: Boolean(process.env.STRIPE_SECRET_KEY), detail: "เชื่อมต่อ Stripe Checkout" },
     { label: "Stripe webhook", ready: Boolean(process.env.STRIPE_WEBHOOK_SECRET), detail: "ยืนยันสถานะการชำระเงิน" },
-    { label: "ราคาจริงทั้ง 3 แพ็กเกจ", ready: configuredPrice("STORE_PRICE_30_DAYS_SATANG") && configuredPrice("STORE_PRICE_90_DAYS_SATANG") && configuredPrice("STORE_PRICE_365_DAYS_SATANG"), detail: "ราคาในหน่วยสตางค์ ต้องตรงกับหน้าร้านและ Stripe" },
+    { label: "ราคาจริงทั้ง 3 แพ็กเกจ", ready: configuredPrice("STORE_PRICE_7_DAYS_SATANG") && configuredPrice("STORE_PRICE_30_DAYS_SATANG") && configuredPrice("STORE_PRICE_365_DAYS_SATANG"), detail: "ราคาในหน่วยสตางค์ ต้องตรงกับหน้าร้านและ Stripe" },
     { label: "Checkout", ready: process.env.STORE_CHECKOUT_ENABLED === "true", detail: process.env.STORE_CHECKOUT_ENABLED === "true" ? "เปิดรับชำระเงินอยู่" : "ปิดการรับชำระเงินอยู่" },
   ];
 

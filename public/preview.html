@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IG Snapper — ผู้ช่วยจัดการผู้ติดตาม Instagram</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#0a0c14;--s1:#101320;--s2:#161a29;--s3:#1e2337;--ink:#eef0f8;--mut:#a8aec5;--fnt:#848ba5;--acc:#8f7bff;--accink:#0d0a24;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--ln:rgba(255,255,255,.1);color-scheme:dark;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#0a0c14}}
+:root[data-theme="dark"]{--bg:#0a0c14}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.7 "IBM Plex Sans Thai","Noto Sans Thai","Leelawadee UI",system-ui,sans-serif}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid #4fe3ff;outline-offset:2px;border-radius:6px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(10,12,20,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:17px}
+.lg{display:inline-block;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#8f7bff,#e45bd6);box-shadow:0 0 0 1px rgba(255,255,255,.1),0 4px 18px rgba(143,123,255,.35);flex:none}
+nav{display:flex;gap:2px;overflow-x:auto}
+nav a{padding:7px 11px;border-radius:8px;color:var(--mut);font-size:14px;white-space:nowrap}
+nav a:hover,nav a.on{color:var(--ink);background:var(--s2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border-radius:9px;border:1px solid var(--ln);background:var(--s2);font-weight:500;font-size:14px}
+.btn:hover{background:var(--s3)}.btn.p{background:var(--acc);color:var(--accink);border-color:transparent}.btn.p:hover{filter:brightness(1.1)}
+.btn.sm{height:34px;padding:0 12px}.btn[disabled]{opacity:.5;cursor:not-allowed}
+.note{border:1px solid rgba(251,191,36,.3);background:rgba(251,191,36,.1);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:13.5px;margin:0 0 20px}
+h1{font-size:clamp(28px,5vw,46px);line-height:1.25;margin:0 0 16px;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:clamp(21px,3vw,28px);margin:0 0 10px;text-wrap:balance}h3{margin:0;font-size:16px}
+p{margin:0 0 12px;text-wrap:pretty}.mut{color:var(--mut)}.fnt{color:var(--fnt);font-size:13px}
+section{padding:54px 0}
+.hero{display:grid;gap:36px;grid-template-columns:1.1fr 1fr;align-items:center;padding:56px 0 40px}
+@media(max-width:800px){.hero{grid-template-columns:1fr}}
+.card{background:var(--s1);border:1px solid var(--ln);border-radius:14px}
+.pad{padding:20px}.grid3{display:grid;gap:16px;grid-template-columns:repeat(3,1fr)}
+@media(max-width:800px){.grid3{grid-template-columns:1fr}}
+.feat{display:grid;gap:22px 30px;grid-template-columns:1fr 1fr}@media(max-width:640px){.feat{grid-template-columns:1fr}}
+.feat div{border-left:2px solid rgba(143,123,255,.5);padding-left:14px}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ln);border-radius:99px;padding:2px 11px;font-size:12px;background:var(--s3);color:var(--mut);white-space:nowrap}
+.b-ok{color:var(--ok);background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.25)}
+.b-w{color:var(--warn);background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.25)}
+.b-bad{color:var(--bad);background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.25)}
+.b-acc{color:#beb2ff;background:rgba(143,123,255,.15);border-color:rgba(143,123,255,.3)}
+.plan{position:relative;display:flex;flex-direction:column;padding:24px}
+.plan.hl{border-color:rgba(143,123,255,.55);box-shadow:0 0 0 1px rgba(143,123,255,.3)}
+.plan .tag{position:absolute;top:-12px;left:22px;background:var(--s3)}.plan.hl .tag{background:var(--g);color:#14102e;border:0;font-weight:600}
+.price{font-size:38px;font-weight:600;letter-spacing:-.02em;margin:14px 0 2px}
+.plan ul{list-style:none;padding:16px 0 0;margin:18px 0 22px;border-top:1px solid var(--ln);display:grid;gap:9px;font-size:14px;color:var(--mut)}
+.plan li:before{content:"✓";color:var(--acc);margin-right:9px}.plan .btn{margin-top:auto}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--ln);border:1px solid var(--ln);border-radius:14px;overflow:hidden}
+@media(max-width:800px){.steps{grid-template-columns:1fr}}.steps div{background:var(--s1);padding:16px}
+.steps b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:rgba(143,123,255,.18);color:var(--acc);font-size:13px;margin-bottom:8px}
+details{border-bottom:1px solid var(--ln);padding:0 18px}details:last-child{border:0}
+summary{cursor:pointer;padding:15px 0;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}summary:after{content:"⌄";color:var(--fnt)}details[open] summary:after{transform:rotate(180deg)}
+input,select{width:100%;height:42px;background:var(--s2);border:1px solid var(--ln);border-radius:9px;color:var(--ink);padding:0 12px;font:inherit}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.chip{border:1px solid var(--ln);background:none;border-radius:99px;padding:5px 14px;font-size:13.5px;color:var(--mut)}
+.chip.on{background:rgba(143,123,255,.16);border-color:rgba(143,123,255,.5);color:var(--ink)}
+.app{display:grid;grid-template-columns:210px 1fr;gap:26px;padding:26px 0 80px}
+@media(max-width:800px){.app{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:3px}@media(max-width:800px){.side{flex-direction:row;overflow-x:auto}}
+.side a{padding:9px 12px;border-radius:9px;color:var(--mut);font-size:14px;white-space:nowrap}.side a.on{background:rgba(143,123,255,.13);color:var(--ink)}
+.key{display:flex;gap:8px;align-items:center;margin-top:14px}
+code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;background:var(--bg);border:1px solid var(--ln);border-radius:9px;padding:9px 12px;font:13px ui-monospace,Consolas,monospace}
+dl{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0 0;font-size:13.5px}@media(max-width:700px){dl{grid-template-columns:1fr 1fr}}
+dt{color:var(--fnt)}dd{margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px}th{font-weight:500;color:var(--fnt);font-size:12.5px;text-align:left;padding:11px 14px;border-bottom:1px solid var(--ln)}
+td{padding:13px 14px;border-bottom:1px solid var(--ln)}tr:last-child td{border:0}.scroll{overflow-x:auto}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--s3);border:1px solid var(--ln);padding:11px 18px;border-radius:11px;font-size:14px;z-index:50;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+dialog{background:var(--s1);color:var(--ink);border:1px solid var(--ln);border-radius:14px;max-width:420px;width:calc(100% - 32px);padding:22px}dialog::backdrop{background:rgba(0,0,0,.65)}
+footer{border-top:1px solid var(--ln);padding:26px 0 40px;color:var(--fnt);font-size:12.5px}
+.ill{padding:0;overflow:hidden}.ill .r{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-top:1px solid var(--ln);font-size:13.5px}
+.ill .h{background:var(--s2);padding:11px 16px;display:flex;justify-content:space-between;font-size:14px;font-weight:500}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- marketing + motion ---- */
+:root{--g:linear-gradient(120deg,#8f7bff,#e45bd6 55%,#ff8a5c)}
+body{overflow-x:hidden}
+header{transition:background .3s,box-shadow .3s}header.sc{background:rgba(10,12,20,.96);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+#app{animation:pg .5s cubic-bezier(.16,1,.3,1)}@keyframes pg{from{opacity:0;transform:translateY(10px)}}
+.rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);transition-delay:var(--d,0s)}.rv.in{opacity:1;transform:none}
+.btn{position:relative;overflow:hidden;transition:transform .2s,filter .2s,background .2s,box-shadow .2s}.btn:hover{transform:translateY(-2px)}.btn:active{transform:none}
+.btn.p{background:var(--g);color:#14102e;font-weight:600;box-shadow:0 8px 28px rgba(143,123,255,.35)}.btn.p:hover{box-shadow:0 12px 36px rgba(228,91,214,.45)}
+.btn.p:after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:shine 3.6s infinite}
+@keyframes shine{40%,100%{transform:translateX(120%)}}
+.aur{position:absolute;top:0;left:50%;width:100vw;transform:translateX(-50%);height:640px;z-index:-1;pointer-events:none;overflow:hidden}
+.aur i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.38;animation:dr 16s ease-in-out infinite alternate}
+.aur i:nth-child(1){width:420px;height:420px;background:#8f7bff;left:8%;top:40px}.aur i:nth-child(2){width:360px;height:360px;background:#e45bd6;right:10%;top:120px;animation-delay:-5s}.aur i:nth-child(3){width:300px;height:300px;background:#ff8a5c;left:46%;top:260px;opacity:.2;animation-delay:-9s}
+@keyframes dr{to{transform:translate(60px,40px) scale(1.15)}}
+.hero{position:relative;padding:64px 0 56px}.hero h1{font-size:clamp(28px,4.6vw,48px);font-weight:600}
+.gt{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stage{position:relative;perspective:1100px}.tilt{transition:transform .25s ease-out;transform-style:preserve-3d}
+.win{background:#0f0e1a;border:1px solid rgba(255,255,255,.14);border-radius:16px;overflow:hidden;box-shadow:0 40px 90px -20px rgba(0,0,0,.8),0 0 0 1px rgba(143,123,255,.15),0 0 80px -20px rgba(143,123,255,.45)}
+.bar{display:flex;align-items:center;gap:7px;padding:11px 14px;background:#171527;border-bottom:1px solid var(--ln)}.bar b{width:10px;height:10px;border-radius:50%;background:#3a3753}.bar span{margin-left:10px;flex:1;background:#0f0e1a;border-radius:7px;padding:2px 12px;font-size:12px;color:var(--fnt)}
+.pnl{padding:16px}.ph{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-weight:600}.ph .lg{width:26px;height:26px;border-radius:7px}.ph em{margin-left:auto;font-style:normal;font-size:11.5px;color:var(--ok);background:rgba(74,222,128,.12);border-radius:99px;padding:1px 10px;display:flex;gap:6px;align-items:center}
+.ph em:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);animation:pu 1.6s infinite}@keyframes pu{50%{opacity:.25;transform:scale(1.6)}}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.sg div{background:#171527;border:1px solid var(--ln);border-radius:11px;padding:10px 12px}.sg small{color:var(--fnt);font-size:11.5px;display:block}.sg b{font-size:20px;font-variant-numeric:tabular-nums}
+.pgb{height:6px;border-radius:9px;background:#201d36;margin:14px 0 4px;overflow:hidden}.pgb i{display:block;height:100%;width:0;border-radius:9px;background:var(--g);animation:fill 5s ease-in-out infinite}@keyframes fill{0%{width:0}60%,90%{width:100%}100%{width:100%;opacity:0}}
+.pl{font-size:11.5px;color:var(--fnt);margin-bottom:10px}
+.tabs{display:flex;gap:6px;margin:10px 0}.tabs button{background:none;border:1px solid var(--ln);border-radius:99px;font-size:12px;padding:4px 12px;color:var(--mut);transition:.2s}.tabs button.on{background:rgba(143,123,255,.18);border-color:rgba(143,123,255,.55);color:var(--ink)}
+.rw{display:flex;align-items:center;gap:10px;padding:8px 4px;border-top:1px solid var(--ln);font-size:13px;opacity:0;transform:translateX(-14px);animation:rin .6s cubic-bezier(.16,1,.3,1) forwards;animation-delay:calc(var(--i)*.14s + .25s)}
+@keyframes rin{to{opacity:1;transform:none}}
+.av{width:28px;height:28px;border-radius:50%;background:var(--g);flex:none;display:grid;place-items:center;font-size:12px;color:#14102e;font-weight:600}.rw span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+.rw u{text-decoration:none;font-size:11px;border-radius:7px;padding:2px 9px;background:rgba(248,113,113,.14);color:var(--bad)}.rw u.g{background:rgba(74,222,128,.14);color:var(--ok)}.rw u.n{background:rgba(143,123,255,.16);color:#c9bfff}
+.acts{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}.acts i{font-style:normal;font-size:12px;padding:6px 12px;border-radius:9px;background:#201d36;border:1px solid var(--ln)}.acts i.p{background:var(--g);color:#14102e;font-weight:600}
+.fc{position:absolute;background:rgba(23,21,39,.92);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:9px 13px;font-size:12.5px;box-shadow:0 16px 40px rgba(0,0,0,.55);animation:fl 5s ease-in-out infinite alternate;white-space:nowrap;z-index:2}
+.fc.a{left:-26px;top:-16px}.fc.b{right:-18px;bottom:-16px;animation-delay:-2.5s}@keyframes fl{to{transform:translateY(-12px)}}
+@media(max-width:800px){.fc.a{left:4px;top:-18px}.fc.b{right:4px;bottom:-18px}.hero{padding-top:34px}}
+.mq{overflow:hidden;border-block:1px solid var(--ln);padding:15px 0;mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}.mq div{display:flex;gap:38px;width:max-content;animation:mq 32s linear infinite;color:var(--mut);font-size:14px}.mq span:before{content:"✦";color:var(--acc);margin-right:12px}@keyframes mq{to{transform:translateX(-50%)}}
+.sh{display:grid;grid-template-columns:.9fr 1.1fr;gap:44px;align-items:center}@media(max-width:800px){.sh{grid-template-columns:minmax(0,1fr)}}.h2c{grid-template-columns:1.05fr 1fr}@media(max-width:800px){.h2c{grid-template-columns:minmax(0,1fr)}}html{overflow-x:clip}
+.ft{display:grid;gap:10px}.ft button{text-align:left;background:var(--s1);border:1px solid var(--ln);border-radius:13px;padding:15px 18px;transition:.25s}.ft button:hover{transform:translateX(4px)}.ft button.on{border-color:rgba(143,123,255,.6);background:linear-gradient(120deg,rgba(143,123,255,.14),rgba(228,91,214,.06))}.ft b{display:block}.ft small{color:var(--mut);font-size:13.5px}
+.wy{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:800px){.wy{grid-template-columns:1fr}}
+.wy .card{padding:24px;transition:transform .3s,border-color .3s}.wy .card:hover{transform:translateY(-6px);border-color:rgba(143,123,255,.5)}.ic{width:44px;height:44px;border-radius:12px;background:rgba(143,123,255,.15);display:grid;place-items:center;font-size:21px;margin-bottom:14px}
+.bars{display:grid;gap:14px;margin-top:18px}.bars div{display:grid;grid-template-columns:70px 1fr 86px;gap:12px;align-items:center;font-size:14px}.bars i{display:block;height:12px;border-radius:9px;background:var(--g);width:0;transition:width 1.4s cubic-bezier(.16,1,.3,1) .2s}.bars .in i,.rv.in .bars i{width:var(--w)}
+.plan{transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s}.plan:hover{transform:translateY(-8px);box-shadow:0 24px 60px -20px rgba(143,123,255,.5)}
+.plan.hl{background:linear-gradient(180deg,rgba(143,123,255,.13),var(--s1) 55%);border-color:rgba(143,123,255,.65)}
+.sv{display:inline-block;margin-top:6px;font-size:12.5px;color:var(--ok);background:rgba(74,222,128,.12);border-radius:99px;padding:1px 10px}
+.cta{position:relative;overflow:hidden;border-radius:22px;padding:clamp(30px,6vw,60px);text-align:center;background:radial-gradient(80% 120% at 50% 0,rgba(143,123,255,.35),transparent),var(--s1);border:1px solid rgba(143,123,255,.35)}
+.cta:before{content:"";position:absolute;inset:-60%;background:conic-gradient(from 0deg,transparent,rgba(228,91,214,.18),transparent 40%);animation:sp 14s linear infinite}@keyframes sp{to{transform:rotate(1turn)}}.cta>*{position:relative}
+.sticky{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;display:none;align-items:center;justify-content:space-between;gap:10px;background:rgba(23,21,39,.96);backdrop-filter:blur(10px);border:1px solid rgba(143,123,255,.4);border-radius:16px;padding:10px 12px 10px 16px;box-shadow:0 16px 40px rgba(0,0,0,.6);transform:translateY(130%);transition:transform .45s cubic-bezier(.16,1,.3,1)}
+.sticky.on{transform:none}@media(max-width:800px){.sticky{display:flex}}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none}.rw{opacity:1;transform:none}.mq div{animation:none}}
+@media(max-width:800px){.logo{white-space:nowrap;font-size:15px;gap:7px}.logo .lg{width:26px;height:26px}header .wrap{gap:6px}nav{min-width:0}nav a{padding:6px 8px;font-size:13px}}</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="logo" href="#home"><i class="lg"></i>IG Snapper</a>
+  <nav aria-label="เมนูหลัก">
+    <a href="#home" data-r="home">หน้าแรก</a><a href="#pricing" data-r="pricing">ราคา</a><a href="#download" data-r="download">ดาวน์โหลด</a><a href="#faq" data-r="faq">FAQ</a><a href="/dashboard" target="_top" data-r="licenses orders">แดชบอร์ด</a><a href="/login" target="_top">เข้าสู่ระบบ</a>
+  </nav>
+</div></header>
+<main id="app" class="wrap" tabindex="-1"></main>
+<footer><div class="wrap"><p>IG Snapper เป็นผลิตภัณฑ์อิสระ ไม่ได้เกี่ยวข้อง ได้รับการรับรอง หรือสนับสนุนโดย Instagram หรือ Meta Platforms, Inc.</p><p>ภาพประกอบใช้ข้อมูลตัวอย่าง · ราคายังเป็นราคาตัวอย่าง · ระบบชำระเงินจริงยังปิดอยู่จนกว่าจะตั้งค่าและทดสอบครบ</p></div></footer>
+<dialog id="dlg"><h3 id="dt"></h3><p class="mut" id="db" style="margin-top:10px"></p><div style="text-align:right;margin-top:16px"><button class="btn p sm" onclick="dlg.close()">รับทราบ</button></div></dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+let plans=[{id:'7-days',n:7,p:59,t:'ลองใช้งานก่อนตัดสินใจ',tag:'ลองก่อน',placeholder:true},{id:'30-days',n:30,p:199,t:'เหมาะกับการใช้งานต่อเนื่อง',placeholder:true},{id:'365-days',n:365,p:1290,t:'ราคาต่อวันต่ำที่สุด ใช้ยาวทั้งปี',hl:1,tag:'คุ้มที่สุด',sv:'ถูกกว่าแบบ 30 วัน ~47% ต่อวัน',placeholder:true}];
+const inc=['ทุกฟีเจอร์ของ IG Snapper เวอร์ชัน 2.3.1','1 คีย์ ใช้ได้ 1 บัญชี Instagram / 2 เบราว์เซอร์ (ค่าเริ่มต้น)','ชำระครั้งเดียว ไม่ต่ออายุอัตโนมัติ','ดูคีย์และสถานะในหน้า “ไลเซนส์ของฉัน”'];
+const faqs=[['purchase','ซื้อไลเซนส์อย่างไร?','เลือกแพ็กเกจ เข้าสู่ระบบ แล้วไปชำระเงินผ่าน Stripe เมื่อระบบหลังบ้านยืนยันการชำระเงินแล้ว คีย์จะแสดงในหน้า “ไลเซนส์ของฉัน”'],['purchase','มีการตัดเงินต่ออายุอัตโนมัติหรือไม่?','ไม่มี เป็นการซื้อครั้งเดียวต่อหนึ่งระยะเวลา และไม่มีกระเป๋าเงินหรือการเติมเงิน'],['activation','หนึ่งคีย์ใช้ได้กี่บัญชีและเบราว์เซอร์?','ค่าเริ่มต้นคือ 1 บัญชี Instagram และ 2 เบราว์เซอร์ต่อคีย์ (ต้องยืนยันก่อนเปิดขาย)'],['activation','ใช้งานได้ไหมถ้าอินเทอร์เน็ตหลุด?','หากเคยตรวจสอบสำเร็จแล้ว จะใช้ต่อได้ชั่วคราวสูงสุดประมาณ 24 ชั่วโมง'],['install','ใช้บนมือถือได้หรือไม่?','ส่วนขยายใช้บน Chrome คอมพิวเตอร์เท่านั้น ส่วนเว็บไซต์เปิดดูและซื้อบนมือถือได้'],['install','อัปเดตอย่างไร?','ยังไม่มีการอัปเดตอัตโนมัติ ให้ดาวน์โหลดไฟล์ใหม่ แทนที่โฟลเดอร์เดิม แล้วกดโหลดซ้ำที่ chrome://extensions'],['billing','ขอคืนเงินได้หรือไม่?','ขึ้นกับนโยบายการคืนเงิน ซึ่งขณะนี้เป็นฉบับร่างและยังไม่กำหนดเงื่อนไขสุดท้าย']];
+const cats={all:'ทั้งหมด',purchase:'การซื้อ',activation:'การเปิดใช้งาน',install:'การติดตั้ง',billing:'การคืนเงิน'};
+const lics=[{p:'365 วัน',k:'DEMO-SAMPLE-0004-DDDD',s:'pending',b:'29 ต.ค. 2569',e:null},{p:'30 วัน',k:'DEMO-SAMPLE-0002-BBBB',s:'active',b:'4 ต.ค. 2569',e:'3 พ.ย. 2569 (อีก 5 วัน)',a:'1/2'},{p:'7 วัน',k:'DEMO-SAMPLE-0001-AAAA',s:'active',b:'25 ต.ค. 2569',e:'1 พ.ย. 2569 (อีก 3 วัน)',a:'2/2'},{p:'30 วัน',k:'DEMO-SAMPLE-0003-CCCC',s:'expired',b:'1 ก.ค. 2569',e:'31 ก.ค. 2569',a:'1/2'}];
+const orders=[['IGS-2026-0004','365 วัน','฿1,290','29 ต.ค. 2569','pending'],['IGS-2026-0001','7 วัน','฿59','25 ต.ค. 2569','paid'],['IGS-2026-0002','30 วัน','฿199','4 ต.ค. 2569','paid'],['IGS-2026-0008','365 วัน','฿1,290','30 ส.ค. 2569','failed']];
+const st={active:['ใช้งานได้','b-ok'],pending:['รอดำเนินการ','b-w'],expired:['หมดอายุ',''],revoked:['ถูกเพิกถอน','b-bad'],paid:['ชำระแล้ว','b-ok'],failed:['ไม่สำเร็จ','b-bad']};
+const badge=k=>`<span class="badge ${st[k][1]}">${st[k][0]}</span>`;
+const thb=n=>'฿'+n.toLocaleString('th-TH');
+const mask=k=>k.split('-').map((x,i,a)=>i&&i<a.length-1?'•'.repeat(x.length):x).join('-');
+function toast(m){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),2600)}
+function info(t,b){$('#dt').textContent=t;$('#db').textContent=b;dlg.showModal()}
+async function startCheckout(planSlug){
+ const button=$('#checkout-button');
+ const label=button?button.textContent:'ดำเนินการชำระเงินผ่าน Stripe';
+ if(button){button.disabled=true;button.textContent='กำลังตรวจสอบ…'}
+ try {
+  const response=await fetch('/api/checkout/session',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({planSlug})});
+  const result=await response.json().catch(()=>({}));
+  if(response.status===401){const next='/checkout?plan='+encodeURIComponent(planSlug);window.top.location.href='/login?next='+encodeURIComponent(next);return}
+  if(!response.ok){info(response.status===503?'ร้านยังไม่เปิดรับชำระเงิน':'เริ่มชำระเงินไม่สำเร็จ',result.error||'โปรดลองใหม่อีกครั้ง');return}
+  if(typeof result.url==='string'&&result.url.startsWith('https://')){window.top.location.href=result.url;return}
+  info('เริ่มชำระเงินไม่สำเร็จ','ไม่ได้รับลิงก์จาก Stripe');
+ } catch { info('การเชื่อมต่อมีปัญหา','โปรดลองใหม่อีกครั้ง'); }
+ finally { if(button){button.disabled=false;button.textContent=label} }
+}
+const planCard=(p,full)=>`<article class="card plan rv ${p.hl?'hl':''}" style="--d:${plans.indexOf(p)*.12}s">${p.tag?`<span class="badge ${p.hl?'b-acc':''} tag">${p.tag}</span>`:''}<h3>ไลเซนส์ ${p.n===365?'1 ปี (365 วัน)':p.n+' วัน'}</h3><p class="mut" style="margin:4px 0 0">${p.t}</p><div class="price">${thb(p.p)}<span class="mut" style="font-size:14px;font-weight:400"> / ${p.n} วัน</span></div><div class="fnt">≈ ${thb(+(p.p/p.n).toFixed(1))} ต่อวัน${p.placeholder?' · ราคาตัวอย่าง':''}</div>${p.sv?`<span class="sv">${p.sv}</span>`:''}${full?`<ul>${inc.map(i=>`<li>${i}</li>`).join('')}</ul>`:'<div style="height:20px"></div>'}<a class="btn ${p.hl?'p':''}" href="/checkout?plan=${p.id}" target="_top">ซื้อแพ็กเกจ ${p.n===365?'1 ปี':p.n+' วัน'}</a></article>`;
+
+const views={
+home:()=>`<div class="aur" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="hero sh h2c"><div><span class="badge rv">ส่วนขยายสำหรับ Chrome บนคอมพิวเตอร์ · เวอร์ชัน 2.3.1</span><h1 class="rv" style="margin-top:18px;--d:.08s">รู้ทันทีว่าใครเลิกติดตามคุณ <span class="gt">ข้อมูลอยู่ในเบราว์เซอร์ของคุณ</span></h1><p class="mut rv" style="font-size:17px;max-width:520px;--d:.16s">บันทึกสแนปช็อตผู้ติดตาม Instagram เทียบการเปลี่ยนแปลง หาคนที่ไม่ติดตามกลับ และจัดการรายชื่อที่ติดตาม ได้ในหน้าจอเดียว เริ่มต้นเพียง <b style="color:var(--ink)">${thb(Math.min(...plans.map(p=>p.p)))}</b> ชำระครั้งเดียว ไม่ต่ออายุอัตโนมัติ</p><div class="rv" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;--d:.24s"><a class="btn p" style="height:50px;padding:0 26px;font-size:15px" href="#pricing">ดูแพ็กเกจ เริ่ม ${thb(Math.min(...plans.map(p=>p.p)))}</a><a class="btn" style="height:50px" href="#how">วิธีใช้งาน</a></div><p class="fnt rv" style="margin-top:18px;--d:.3s">✓ ไม่มีกระเป๋าเงิน ไม่มีตัดเงินซ้ำ &nbsp; ✓ ข้อมูลสแนปช็อตเก็บในเบราว์เซอร์</p></div>
+<div class="stage rv" style="--d:.2s"><div class="fc a">📉 เลิกติดตามคุณ <b>−3</b></div><div class="fc b">✓ เก็บสแนปช็อตแล้ว</div><div class="tilt" id="tilt">${ui('main')}</div><p class="fnt" style="text-align:center;margin-top:12px">ภาพประกอบตามหน้าจอของโปรแกรม ใช้ข้อมูลสมมติ</p></div></div>
+<div class="mq" aria-hidden="true"><div>${[...Array(2)].map(()=>['บันทึกสแนปช็อต','เทียบกับครั้งก่อน','หาคนที่ไม่ติดตามกลับ','จัดการรายชื่อที่ติดตาม','ส่งออก CSV / JSON','ประวัติการสแกน','ข้อมูลอยู่ในเบราว์เซอร์','หน้าจอไทย / อังกฤษ'].map(x=>`<span>${x}</span>`).join('')).join('')}</div></div>
+<section><div class="sh"><div class="rv"><h2>หน้าจอเดียว ครบทุกอย่างที่ต้องดู</h2><p class="mut">กดเลือกฟีเจอร์เพื่อดูตัวอย่างหน้าจอ</p><div class="ft" id="ft">${[['0','หาคนที่ไม่ติดตามกลับ','แสดงบัญชีที่คุณติดตามแต่เขาไม่ติดตามคุณ ค้นหาและเลิกติดตามได้ทันที'],['1','ประวัติสแกน','เก็บสแนปช็อตหลายครั้ง แล้วดูว่าใครเข้าใครออกระหว่างครั้ง'],['2','ส่งออกและสำรองข้อมูล','ส่งออกรายชื่อเป็นไฟล์ CSV หรือ JSON']].map(f=>`<button data-t="${f[0]}" class="${f[0]==='0'?'on':''}"><b>${f[1]}</b><small>${f[2]}</small></button>`).join('')}</div></div><div class="rv" style="--d:.15s" id="sc">${ui(0)}</div></div></section>
+<section style="padding-top:10px"><h2 class="rv">ทำไมต้อง IG Snapper</h2><div class="wy" style="margin-top:22px">${[['🔒','ข้อมูลอยู่กับคุณ','รายชื่อผู้ติดตามและสแนปช็อตถูกเก็บในเบราว์เซอร์ของคุณ ไม่ได้อัปโหลดไปเซิร์ฟเวอร์ของเรา'],['🧾','จ่ายครั้งเดียว ชัดเจน','เลือก 7 วัน 30 วัน หรือ 1 ปี ไม่ต่ออายุเอง ไม่มีกระเป๋าเงินหรือการเติมเงิน'],['🔍','โปร่งใสเรื่องข้อมูล','ตรวจสอบไลเซนส์ส่งเพียงคีย์ รหัสเบราว์เซอร์แบบสุ่ม และแฮชทางเดียวของบัญชี']].map((c,i)=>`<div class="card rv" style="--d:${i*.1}s"><div class="ic">${c[0]}</div><h3>${c[1]}</h3><p class="mut" style="margin:6px 0 0;font-size:14.5px">${c[2]}</p></div>`).join('')}</div></section>
+<section id="how" style="padding-top:20px"><h2 class="rv" style="margin-bottom:18px">ซื้อและเริ่มใช้งานอย่างไร</h2><div class="steps rv">${[['เลือกแพ็กเกจ','7, 30 หรือ 365 วัน'],['เข้าสู่ระบบ','ผูกไลเซนส์กับบัญชีของคุณ'],['ชำระเงินผ่าน Stripe','เราไม่รับข้อมูลบัตรบนเว็บนี้'],['รับคีย์ในบัญชี','หลังระบบยืนยันการชำระเงินจริง'],['ติดตั้งและกรอกคีย์','บน Chrome คอมพิวเตอร์']].map((s,i)=>`<div><b>${i+1}</b><h3 style="font-size:15px">${s[0]}</h3><p class="mut" style="font-size:13.5px;margin:2px 0 0">${s[1]}</p></div>`).join('')}</div></section>
+<section style="padding-top:10px"><h2 class="rv">เลือกระยะเวลาที่คุ้มกับคุณ</h2><p class="mut rv">ยิ่งนาน ยิ่งถูกต่อวัน (ราคาตัวอย่าง)</p><div class="grid3" style="margin-top:30px">${plans.map(p=>planCard(p)).join('')}</div>${bars()}</section>
+<section style="padding-top:20px"><div class="cta rv"><h2>พร้อมดูแล้วว่าใครเลิกติดตามคุณ?</h2><p class="mut" style="max-width:520px;margin:0 auto 22px">เริ่มต้นเพียง ${thb(Math.min(...plans.map(p=>p.p)))} สำหรับ ${plans.reduce((a,b)=>a.n<b.n?a:b).n} วัน หรือเลือก 1 ปีเพื่อราคาต่อวันที่ต่ำที่สุด</p><a class="btn p" style="height:52px;padding:0 30px;font-size:15px" href="#pricing">เลือกแพ็กเกจเลย</a></div></section>
+<div class="sticky" id="stk"><span style="font-size:13.5px">เริ่มต้น <b>${thb(Math.min(...plans.map(p=>p.p)))}</b> / ${plans.reduce((a,b)=>a.n<b.n?a:b).n} วัน</span><a class="btn p sm" href="#pricing">ดูแพ็กเกจ</a></div>`,
+
+pricing:()=>`<section><h1 style="font-size:clamp(26px,4vw,36px)">เลือกแพ็กเกจไลเซนส์</h1><p class="mut" style="max-width:640px">ซื้อครั้งเดียวต่อหนึ่งระยะเวลา ไม่มีตัดเงินอัตโนมัติ ไม่มีกระเป๋าเงิน ทุกแพ็กเกจฟีเจอร์เหมือนกัน ต่างกันที่ระยะเวลา</p><p class="note" id="price-note" style="margin-top:16px">ราคาเป็นราคาตัวอย่างสำหรับต้นแบบ ยังไม่ใช่ราคาขายจริง</p><div class="grid3" style="margin-top:34px">${plans.map(p=>planCard(p,1)).join('')}</div>${bars()}</section>`,
+
+download:()=>`<section style="max-width:760px"><h1 style="font-size:clamp(26px,4vw,36px)">ดาวน์โหลดและติดตั้ง</h1><div class="card pad" style="margin:20px 0 34px"><div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center"><div><h3>IG Snapper เวอร์ชัน 2.3.1 <span class="badge b-acc">ล่าสุด</span></h3><p class="fnt" style="margin:4px 0 0;font-family:ui-monospace,monospace">IG-Snapper-v2.3.1-customer.zip</p></div><button class="btn" disabled>ดาวน์โหลด (ยังไม่เปิดให้บริการ)</button></div></div><h2>ขั้นตอนการติดตั้ง</h2>${['แตกไฟล์ ZIP ไว้ในโฟลเดอร์ถาวร','เปิด chrome://extensions แล้วเปิด Developer mode','กด Load unpacked แล้วเลือกโฟลเดอร์','ปักหมุดไอคอน IG Snapper','ล็อกอิน Instagram คลิกไอคอน แล้วกรอกคีย์'].map((s,i)=>`<div class="card pad" style="display:flex;gap:14px;margin-bottom:10px;padding:14px 16px"><b style="color:var(--acc)">${i+1}</b><span>${s}</span></div>`).join('')}<h2 style="margin-top:34px">ความเข้ากันได้</h2><div class="card">${[['Google Chrome บนคอมพิวเตอร์','รองรับ','b-ok'],['Edge, Brave และ Chromium อื่น ๆ','ยังไม่ได้ยืนยัน','b-w'],['Firefox และ Safari','ยังไม่รองรับ',''],['เบราว์เซอร์มือถือ','ยังไม่รองรับ','']].map(c=>`<div class="r" style="display:flex;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--ln)">${c[0]}<span class="badge ${c[2]}">${c[1]}</span></div>`).join('')}</div></section>`,
+
+faq:()=>`<section style="max-width:760px"><h1 style="font-size:clamp(26px,4vw,36px)">คำถามที่พบบ่อย</h1><input id="fq" type="search" placeholder="ค้นหาคำถาม เช่น คืนเงิน" aria-label="ค้นหาคำถาม"><div class="chips" id="fc"></div><div class="card" id="fl"></div></section>`,
+
+checkout:id=>{const p=plans.find(x=>x.id===id)||plans[1];return`<section><p class="fnt"><a href="#pricing">ราคา</a> › สรุปคำสั่งซื้อ</p><h1 style="font-size:clamp(26px,4vw,34px)">สรุปคำสั่งซื้อ</h1><div style="display:grid;gap:20px;grid-template-columns:1.3fr 1fr;align-items:start" class="co"><div style="display:grid;gap:14px"><div class="card pad"><h3>1. แพ็กเกจที่เลือก</h3><p class="mut" style="margin:6px 0 0">ไลเซนส์ IG Snapper ${p.n} วัน · ชำระครั้งเดียว ไม่ต่ออายุอัตโนมัติ</p></div><div class="card pad"><h3>2. บัญชีของคุณ</h3><p class="mut" style="margin:6px 0 0">ไลเซนส์จะผูกกับบัญชีที่เข้าสู่ระบบ (ต้องเข้าสู่ระบบก่อนชำระเงิน)</p></div><div class="card pad"><h3>3. ชำระเงินที่ Stripe</h3><p class="mut" style="margin:6px 0 0">คุณจะถูกพาไปหน้าชำระเงินของ Stripe เว็บนี้ไม่รับข้อมูลบัตรและไม่แสดง QR เอง การกลับมาจาก Stripe ไม่ใช่หลักฐานการชำระเงิน คีย์จะออกหลังระบบหลังบ้านยืนยันแล้วเท่านั้น</p></div></div><aside class="card pad"><h3>สรุปราคา</h3><div style="display:flex;justify-content:space-between;margin:14px 0;border-bottom:1px solid var(--ln);padding-bottom:12px"><span class="mut">ไลเซนส์ ${p.n} วัน</span><span>${thb(p.p)}</span></div><div style="display:flex;justify-content:space-between;font-weight:600;font-size:17px;margin-bottom:6px"><span>รวม</span><span>${thb(p.p)}</span></div>${p.placeholder?'<p class="fnt" style="color:var(--warn)">ราคาตัวอย่าง ยังไม่ใช่ราคาขายจริง</p>':''}<button id="checkout-button" class="btn p" style="width:100%;height:46px" onclick="startCheckout('${p.id}')">🔒 ดำเนินการชำระเงินผ่าน Stripe</button></aside></div></section><style>@media(max-width:800px){.co{grid-template-columns:1fr!important}}</style>`},
+
+licenses:()=>dash('licenses',`<h1 style="font-size:28px">ไลเซนส์ของฉัน</h1><p class="mut">คัดลอกคีย์ไปกรอกในส่วนขยาย IG Snapper</p>${lics.map((l,i)=>`<div class="card pad" style="margin-bottom:14px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h3>ไลเซนส์ ${l.p}</h3>${badge(l.s)}</div><div class="key"><code id="k${i}" data-m="1">${l.s==='pending'?'ยังไม่มีคีย์':mask(l.k)}</code><button class="btn sm" ${l.s==='pending'?'disabled':''} onclick="rev(${i})" aria-label="แสดงหรือซ่อนคีย์">👁</button><button class="btn sm" ${l.s==='pending'?'disabled':''} onclick="cp(${i})" aria-label="คัดลอกคีย์">คัดลอก</button></div>${l.s==='pending'?'<p class="fnt" style="margin-top:8px">รอการยืนยันการชำระเงิน คีย์จะแสดงเมื่อยืนยันแล้ว</p>':''}<dl><div><dt>ซื้อเมื่อ</dt><dd>${l.b}</dd></div><div><dt>หมดอายุ</dt><dd>${l.e||'เริ่มนับหลังยืนยัน'}</dd></div><div><dt>จำกัดบัญชี</dt><dd>1 บัญชี</dd></div><div><dt>เบราว์เซอร์ที่ใช้</dt><dd>${l.a||'0/2'}</dd></div></dl></div>`).join('')}`),
+
+orders:()=>dash('orders',`<h1 style="font-size:28px">ประวัติการสั่งซื้อ</h1><p class="mut">สถานะ “ชำระแล้ว” มาจากการยืนยันของระบบหลังบ้านเท่านั้น</p><div class="card scroll"><table><thead><tr><th>เลขที่</th><th>แพ็กเกจ</th><th>วันที่</th><th>ยอดรวม</th><th>สถานะ</th></tr></thead><tbody>${orders.map(o=>`<tr><td style="font-family:ui-monospace,monospace;font-size:13px">${o[0]}</td><td>${o[1]}</td><td class="mut">${o[3]}</td><td>${o[2]}</td><td>${badge(o[4])}</td></tr>`).join('')}</tbody></table></div>`)
+};
+async function loadStorePlans(){
+ try {
+  const response=await fetch('/api/store/plans',{cache:'no-store'});
+  const payload=await response.json();
+  if(!response.ok||!Array.isArray(payload.plans)||!payload.plans.length)return;
+  const plan30=payload.plans.find(p=>p.slug==='30-days');
+  plans=payload.plans.filter(p=>p.visible).map(p=>{
+   const perDay=p.priceSatang/100/Math.max(1,p.durationDays);
+   const perDay30=plan30?plan30.priceSatang/100/30:0;
+   const saving=perDay30>0?Math.round((1-perDay/perDay30)*100):0;
+   return {id:p.slug,n:p.durationDays,p:p.priceSatang/100,t:p.tagline||'',hl:p.highlight?1:0,tag:p.durationDays===7?'ลองก่อน':p.highlight?'คุ้มที่สุด':undefined,sv:p.highlight&&saving>0?`ถูกกว่าแบบ 30 วัน ~${saving}% ต่อวัน`:undefined,placeholder:Boolean(p.isPlaceholderPrice)};
+  });
+  const currentRoute=(location.hash.slice(1)||'home').split('/')[0];
+  if(['home','pricing','checkout'].includes(currentRoute))route();
+ } catch { /* Keep the supplied preview values if the public plans endpoint is unavailable. */ }
+}
+function dash(on,body){return`<div class="app"><nav class="side" aria-label="เมนูแดชบอร์ด"><a href="#licenses" class="${on==='licenses'?'on':''}">ไลเซนส์ของฉัน</a><a href="#orders" class="${on==='orders'?'on':''}">ประวัติการสั่งซื้อ</a></nav><div><p class="note">โหมดต้นแบบ: ข้อมูลทั้งหมดเป็นข้อมูลตัวอย่าง คีย์ใช้งานจริงไม่ได้</p>${body}</div></div>`}
+window.rev=i=>{const c=$('#k'+i),m=c.dataset.m==='1';c.textContent=m?lics[i].k:mask(lics[i].k);c.dataset.m=m?'0':'1'};
+window.cp=async i=>{try{await navigator.clipboard.writeText(lics[i].k);toast('คัดลอกคีย์แล้ว')}catch{toast('คัดลอกไม่สำเร็จ กรุณาแสดงคีย์แล้วคัดลอกด้วยตนเอง')}};
+function faqInit(){let cat='all';const draw=()=>{const q=$('#fq').value.trim().toLowerCase();const r=faqs.filter(f=>(cat==='all'||f[0]===cat)&&(!q||(f[1]+f[2]).toLowerCase().includes(q)));$('#fl').innerHTML=r.length?r.map(f=>`<details><summary>${f[1]}</summary><p class="mut" style="padding-bottom:14px">${f[2]}</p></details>`).join(''):'<p class="mut pad">ไม่พบคำถามที่ตรงกับการค้นหา</p>';$('#fc').innerHTML=Object.entries(cats).map(([k,v])=>`<button class="chip ${k===cat?'on':''}" data-c="${k}" aria-pressed="${k===cat}">${v}</button>`).join('')};$('#fq').oninput=draw;$('#fc').onclick=e=>{if(e.target.dataset.c){cat=e.target.dataset.c;draw()}};draw()}
+
+const NAMES=['sample.user_01','demo.account','example_shop','test.name_22','mock_creator'];
+function ui(mode){
+ const hd=`<div class="bar"><b></b><b></b><b></b><span>instagram.com</span></div><div class="pnl"><div class="ph"><i class="lg"></i>IG Snapper<em>Active</em></div>`;
+ const acts=`<div class="acts"><i class="p">Save snapshot</i><i>Export CSV</i><i>Export JSON</i></div></div>`;
+ const row=(n,t,c,i)=>`<div class="rw" style="--i:${i}"><div class="av">${n[0].toUpperCase()}</div><span>@${n}</span><u class="${c}">${t}</u></div>`;
+ if(mode==='main')return`<div class="win">${hd}<div class="sg"><div><small>Followers</small><b data-n="1281">0</b></div><div><small>Following</small><b data-n="1102">0</b></div><div><small>Follower ratio</small><b>1.16</b></div></div><div class="pgb"><i></i></div><div class="pl">Comparing your connections…</div><div class="tabs"><button class="on">Not following you</button><button>History</button></div>${NAMES.slice(0,4).map((n,i)=>row(n,i<3?'Unfollow':'Follow','' ,i)).join('')}${acts}</div>`;
+ if(mode===0)return`<div class="win">${hd}<div class="pl">Find non-followers · ${NAMES.length} accounts</div>${NAMES.map((n,i)=>row(n,'Not following you','',i)).join('')}${acts}</div>`;
+ if(mode===1)return`<div class="win">${hd}<div class="pl">Scan history — local snapshots</div>${[['วันนี้ · 1,281','−3','',0],['5 วันก่อน · 1,284','+12','g',1],['12 วันก่อน · 1,272','−5','',2],['20 วันก่อน · 1,277','+2','g',3]].map(r=>`<div class="rw" style="--i:${r[3]}"><div class="av">📸</div><span style="font-family:inherit">${r[0]}</span><u class="${r[2]}">${r[1]}</u></div>`).join('')}${acts}</div>`;
+ return`<div class="win">${hd}<div class="pl">Export and backup</div>${[['followers_snapshot.csv','CSV'],['following_snapshot.json','JSON'],['non_followers.csv','CSV']].map((r,i)=>`<div class="rw" style="--i:${i}"><div class="av">⬇</div><span>${r[0]}</span><u class="n">${r[1]}</u></div>`).join('')}${acts}</div>`;
+}
+function bars(){return`<div class="card pad rv" style="margin-top:34px"><h3>เทียบราคาต่อวัน</h3><p class="fnt" style="margin:2px 0 0">ยิ่งแท่งสั้น ยิ่งคุ้ม</p><div class="bars">${plans.map(p=>{const d=p.p/p.n;return`<div><span>${p.n===365?'1 ปี':p.n+' วัน'}</span><span style="background:var(--s3);border-radius:9px"><i style="--w:${Math.round(d/(59/7)*100)}%"></i></span><b>฿${d.toFixed(1)}/วัน</b></div>`}).join('')}</div></div>`}
+function post(){
+ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+ const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ document.querySelectorAll('.rv').forEach(el=>rm?el.classList.add('in'):io.observe(el));
+ document.querySelectorAll('[data-n]').forEach(el=>{const n=+el.dataset.n;if(rm){el.textContent=n.toLocaleString();return}const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/1400);el.textContent=Math.round(n*(1-Math.pow(1-k,3))).toLocaleString();if(k<1)requestAnimationFrame(f)})(t0)});
+ const tl=$('#tilt');if(tl&&!rm&&matchMedia('(hover:hover)').matches){const st=tl.parentNode;st.onpointermove=e=>{const r=st.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;tl.style.transform=`rotateY(${x*9}deg) rotateX(${-y*9}deg)`};st.onpointerleave=()=>tl.style.transform=''}
+ const ft=$('#ft');if(ft)ft.onclick=e=>{const b=e.target.closest('button');if(!b)return;ft.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('#sc').innerHTML=ui(+b.dataset.t)};
+}
+addEventListener('scroll',()=>{$('header').classList.toggle('sc',scrollY>10);const k=$('#stk');if(k)k.classList.toggle('on',scrollY>520)},{passive:true});
+function route(){const h=location.hash.slice(1)||'home';if(h==='how'){if(!$('#how')){location.hash='home';return}$('#how').scrollIntoView({behavior:'smooth'});return}
+const [r,arg]=h.split('/');const v=views[r]||views.home;$('#app').innerHTML=v(arg);if(r==='faq')faqInit();const priceNote=$('#price-note');if(priceNote)priceNote.style.display=plans.some(p=>p.placeholder)?'':'none';
+document.querySelectorAll('nav a[data-r]').forEach(a=>a.classList.toggle('on',a.dataset.r.split(' ').includes(r)));window.scrollTo(0,0);post();reportRoute(r);reportHeight()}
+function reportHeight(){try{parent.postMessage({type:'ig-snapper-preview-height',height:Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)},location.origin)}catch{}}
+function reportRoute(route){try{parent.postMessage({type:'ig-snapper-preview-route',route},location.origin)}catch{}}
+const heightObserver=new ResizeObserver(()=>requestAnimationFrame(reportHeight));heightObserver.observe(document.documentElement);addEventListener('load',reportHeight);addEventListener('resize',reportHeight);addEventListener('hashchange',reportHeight);
+addEventListener('hashchange',route);route();requestAnimationFrame(reportHeight);loadStorePlans();
+</script>
+</body>
+</html>
