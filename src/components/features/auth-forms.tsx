@@ -76,7 +76,7 @@ export function RegisterForm() {
     if (!f.email.trim()) er.email = "กรุณากรอกอีเมล"; else if (!isEmail(f.email)) er.email = "รูปแบบอีเมลไม่ถูกต้อง";
     if (f.password.length < 8) er.password = "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร";
     if (f.confirm !== f.password) er.confirm = "รหัสผ่านไม่ตรงกัน";
-    if (!acceptedPolicies) setFormError("กรุณาอ่านและยอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัวก่อนสมัครสมาชิก");
+    if (!acceptedPolicies) { setFormError("กรุณาอ่านและยอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัวก่อนสมัครสมาชิก"); return; }
     setErrors(er); setFormError(""); if (Object.keys(er).length) return;
     setLoading(true);
     try {
