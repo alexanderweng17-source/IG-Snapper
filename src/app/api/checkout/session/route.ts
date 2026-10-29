@@ -18,7 +18,7 @@ function safeOrigin(request: Request) {
 export async function POST(request: Request) {
   try {
     if (process.env.STORE_CHECKOUT_ENABLED !== "true") {
-      return NextResponse.json({ error: "ร้านค้ายังไม่เปิดรับชำระเงินจริง โปรดตั้งค่าราคาและเปิด Checkout หลังทดสอบระบบครบแล้ว" }, { status: 503 });
+      return NextResponse.json({ error: "ร้านยังไม่เปิดรับชำระเงินจริง ขณะนี้กำลังตั้งค่าคีย์ Stripe/Supabase และทดสอบระบบ โปรดลองอีกครั้งภายหลัง" }, { status: 503 });
     }
     const supabase = await createSupabaseServerClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -28,7 +28,13 @@ export async function POST(request: Request) {
     const slug = typeof body?.planSlug === "string" ? body.planSlug : "";
     const plan = getStorePlan(slug);
     if (!plan) return NextResponse.json({ error: "ไม่พบแพ็กเกจที่เลือก" }, { status: 400 });
-    if (!checkoutIsEnabled(plan)) return NextResponse.json({ error: "ยังไม่ได้กำหนดราคาขายจริงสำหรับแพ็กเกจนี้" }, { status: 503 });
+    if (!checkoutIsEnabled(plan)) {
+      return NextResponse.json({
+        error: plan.isPlaceholderPrice
+          ? "ยังไม่ได้กำหนดราคาขายจริงสำหรับแพ็กเกจนี้"
+          : "ระบบรับชำระเงินยังตั้งค่าไม่ครบ กรุณาติดต่อผู้ดูแลระบบ",
+      }, { status: 503 });
+    }
 
     const admin = createSupabaseAdminClient();
     const origin = safeOrigin(request);

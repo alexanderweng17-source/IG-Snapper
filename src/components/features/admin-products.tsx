@@ -12,6 +12,7 @@ const envNames: Record<string, string> = {
 
 export function AdminProducts({ plans, checkoutEnabled }: { plans: Plan[]; checkoutEnabled: boolean }) {
   const stripeReady = Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
+  const supabaseReady = Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY);
   const publicPlans = plans.filter((plan) => plan.visible);
   const pricesReady = plans.every((plan) => !plan.isPlaceholderPrice);
 
@@ -20,7 +21,7 @@ export function AdminProducts({ plans, checkoutEnabled }: { plans: Plan[]; check
       <Card>
         <CardHeader title="สถานะหน้าร้าน" />
         <CardBody>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-lg border border-line/10 bg-surface-2 p-4">
               <p className="text-sm text-muted">Checkout</p>
               <div className="mt-2">{checkoutEnabled ? <Badge tone="success"><CheckCircle2 className="size-3.5" />เปิด</Badge> : <Badge tone="warning"><AlertTriangle className="size-3.5" />ปิดอยู่</Badge>}</div>
@@ -33,10 +34,14 @@ export function AdminProducts({ plans, checkoutEnabled }: { plans: Plan[]; check
               <p className="text-sm text-muted">Stripe secrets</p>
               <div className="mt-2">{stripeReady ? <Badge tone="success">ตั้งค่าแล้ว</Badge> : <Badge tone="warning">ต้องตรวจสอบ</Badge>}</div>
             </div>
+            <div className="rounded-lg border border-line/10 bg-surface-2 p-4">
+              <p className="text-sm text-muted">Supabase server key</p>
+              <div className="mt-2">{supabaseReady ? <Badge tone="success">ตั้งค่าแล้ว</Badge> : <Badge tone="warning">ต้องตรวจสอบ</Badge>}</div>
+            </div>
           </div>
-          {!pricesReady || !stripeReady || !checkoutEnabled ? <p className="mt-4 rounded-md border border-warning/20 bg-warning/5 p-3 text-sm text-muted">
+          {!pricesReady || !stripeReady || !supabaseReady || !checkoutEnabled ? <p className="mt-4 rounded-md border border-warning/20 bg-warning/5 p-3 text-sm text-muted">
             <AlertTriangle className="mr-2 inline size-4 text-warning" aria-hidden />
-            ร้านยังไม่พร้อมรับชำระเงิน อย่าเปิด Checkout จนกว่าราคาจะตรงกับ Stripe, ตั้งค่า webhook และทดสอบการชำระเงินครบ
+            ร้านยังไม่พร้อมรับชำระเงิน อย่าเปิด Checkout จนกว่าจะตั้งค่า Stripe, webhook และ Supabase server key ครบ ตรวจสอบราคาให้ตรง และทดสอบการชำระเงินจริง/การออกไลเซนส์ครบ
           </p> : null}
         </CardBody>
       </Card>

@@ -24,6 +24,19 @@ export function getStorePlan(slug: string) {
   return storePlans.find((plan) => plan.slug === slug && plan.visible) ?? null;
 }
 
+export function checkoutConfigurationIssues(plan: Plan): string[] {
+  const issues: string[] = [];
+  if (plan.isPlaceholderPrice) issues.push("กำหนดราคาจริงของแพ็กเกจ");
+  if (!process.env.STRIPE_SECRET_KEY) issues.push("ตั้งค่า STRIPE_SECRET_KEY");
+  if (!process.env.STRIPE_WEBHOOK_SECRET) issues.push("ตั้งค่า STRIPE_WEBHOOK_SECRET");
+  if (!(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)) {
+    issues.push("ตั้งค่า SUPABASE_SECRET_KEY");
+  }
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!siteUrl || !siteUrl.startsWith("https://")) issues.push("ตั้งค่า NEXT_PUBLIC_SITE_URL เป็น HTTPS");
+  return issues;
+}
+
 export function checkoutIsEnabled(plan: Plan) {
-  return process.env.STORE_CHECKOUT_ENABLED === "true" && !plan.isPlaceholderPrice;
+  return process.env.STORE_CHECKOUT_ENABLED === "true" && checkoutConfigurationIssues(plan).length === 0;
 }

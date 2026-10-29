@@ -27,7 +27,7 @@ export function CheckoutHandoff({ planSlug, enabled }: { planSlug: string; enabl
   }
   if (!enabled) return <div className="space-y-2">
     <Button size="lg" className="w-full" disabled><Lock className="size-4" aria-hidden />ยังไม่เปิดรับชำระเงินจริง</Button>
-    <p className="text-xs leading-5 text-warning">ต้องกำหนดราคาขายจริงและเปิดระบบ Checkout ใน Environment Variables ก่อน จึงจะรับชำระเงินได้</p>
+    <p className="text-xs leading-5 text-warning">ต้องตั้งค่า Stripe API key, webhook และ Supabase server key ให้ครบ พร้อมทดสอบการชำระเงินและการออกไลเซนส์ก่อน จึงจะเปิดรับเงินจริงได้</p>
   </div>;
   return <div className="space-y-2">
     <Button size="lg" className="w-full" loading={loading} onClick={beginCheckout}><Lock className="size-4" aria-hidden />{loading ? "กำลังเปิดหน้าชำระเงิน…" : "ชำระเงินผ่าน Stripe"}</Button>
