@@ -234,7 +234,7 @@ function post(){
  const ft=$('#ft');if(ft)ft.onclick=e=>{const b=e.target.closest('button');if(!b)return;ft.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('#sc').innerHTML=ui(+b.dataset.t)};
 }
 addEventListener('scroll',()=>{$('header').classList.toggle('sc',scrollY>10);const k=$('#stk');if(k)k.classList.toggle('on',scrollY>520)},{passive:true});
-function route(){const h=location.hash.slice(1)||'home';if(h==='how'){if(!$('#how')){location.hash='home';return}$('#how').scrollIntoView({behavior:'smooth'});return}
+function route(){const h=location.hash.slice(1)||'home';if(h==='licenses'||h==='orders'){window.top.location.href='/dashboard';return}if(h==='how'){if(!$('#how')){location.hash='home';return}$('#how').scrollIntoView({behavior:'smooth'});return}
 const [r,arg]=h.split('/');const v=views[r]||views.home;$('#app').innerHTML=v(arg);if(r==='faq')faqInit();const priceNote=$('#price-note');if(priceNote)priceNote.style.display=plans.some(p=>p.placeholder)?'':'none';
 document.querySelectorAll('nav a[data-r]').forEach(a=>a.classList.toggle('on',a.dataset.r.split(' ').includes(r)));window.scrollTo(0,0);post();reportRoute(r);reportHeight()}
 function reportHeight(){try{parent.postMessage({type:'ig-snapper-preview-height',height:Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)},location.origin)}catch{}}
