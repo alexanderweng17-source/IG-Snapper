@@ -14,7 +14,7 @@ This project now includes the first production-oriented integration layer:
 - Customer order/license data loaded from Supabase, with the raw issued key kept in a service-role-only table.
 - Server-side order status endpoint used by the Checkout return page.
 
-The storefront is deliberately disabled for checkout until actual prices and server secrets are configured. This repository does not contain API secrets. The Stripe account connected during development was in test mode; live payment eligibility for this software and its Instagram-related functionality must be confirmed with Stripe before launch.
+The storefront is deliberately disabled for checkout until actual prices and server secrets are configured. This repository does not contain API secrets. A Stripe Live account is available, but this checkout integration has not been tested end-to-end. Keep checkout disabled until the correct Live credentials and webhook are configured, a test-mode purchase has completed successfully, actual prices are confirmed, and Stripe has confirmed eligibility for this software and its Instagram-related functionality.
 
 ## Install and run
 
@@ -44,7 +44,7 @@ The webhook signing secret must match the endpoint's Stripe mode (test vs live).
 
 ## Supabase database
 
-The existing extension tables (`licenses`, `license_activations`, `license_failures`) and `verify-license` Edge Function are preserved. Migrations `202610290001_web_store.sql` and `202610290002_refund_web_orders.sql` are applied to the existing `Ig-Snapper` Supabase project. They create `web_orders`, `web_license_secrets`, and server-only RPC functions for issuance, pending-status updates, and full-refund revocation. Both new tables have RLS enabled and no `anon`/`authenticated` grants; service-role access is required.
+The existing extension tables (`licenses`, `license_activations`, `license_failures`) and `verify-license` Edge Function are preserved. Migrations `20261029154943_web_store.sql` and `20261029154948_refund_web_orders.sql` are applied and recorded in the existing `Ig-Snapper` Supabase project's migration history. They create `web_orders`, `web_license_secrets`, and server-only RPC functions for issuance, pending-status updates, and full-refund revocation. Both new tables have RLS enabled and no `anon`/`authenticated` grants; service-role access is required.
 
 Set Supabase Auth's Site URL and the following redirect URL before testing email confirmation/password recovery:
 
