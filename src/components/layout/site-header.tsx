@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/dialog";
 import { NavLink } from "./nav-link";
 import { t } from "@/i18n";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
 
 const links = [
   { href: "/", label: "หน้าแรก", exact: true },
@@ -26,11 +27,11 @@ export function SiteHeader() {
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     let active = true;
-    void supabase.auth.getUser().then(({ data }) => {
+    void supabase.auth.getUser().then(({ data }: { data: { user: User | null } }) => {
       if (!active) return;
       setUserEmail(data.user?.email ?? null);
     }).catch(() => { /* keep the signed-out header if session lookup fails */ });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
       setUserEmail(session?.user?.email ?? null);
     });
     return () => { active = false; subscription.unsubscribe(); };
