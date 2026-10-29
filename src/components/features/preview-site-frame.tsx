@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const previewPaths: Record<string, string> = {
   home: "/",
@@ -18,11 +19,29 @@ export function PreviewSiteFrame({
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState("100vh");
+  const authRef = useRef<{ authenticated: boolean; email: string | null; name: string | null }>({ authenticated: false, email: null, name: null });
+
+  const sendAuth = useCallback(() => {
+    frame.current?.contentWindow?.postMessage({ type: "ig-snapper-auth-state", ...authRef.current }, window.location.origin);
+  }, []);
   const fragment = page === "checkout" && planSlug
     ? `checkout/${encodeURIComponent(planSlug)}`
     : page;
 
   useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    let active = true;
+    const syncAuth = (user: { email?: string; user_metadata?: Record<string, unknown> } | null) => {
+      authRef.current = {
+        authenticated: Boolean(user),
+        email: user?.email ?? null,
+        name: typeof user?.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
+      };
+      sendAuth();
+    };
+    void supabase.auth.getUser().then(({ data }) => { if (active) syncAuth(data.user); }).catch(() => { if (active) syncAuth(null); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => syncAuth(session?.user ?? null));
+
     function receiveMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow) return;
 
