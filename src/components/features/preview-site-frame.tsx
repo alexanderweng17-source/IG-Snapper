@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
 
 const previewPaths: Record<string, string> = {
   home: "/",
@@ -31,7 +32,7 @@ export function PreviewSiteFrame({
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     let active = true;
-    const syncAuth = (user: { email?: string; user_metadata?: Record<string, unknown> } | null) => {
+    const syncAuth = (user: User | null) => {
       authRef.current = {
         authenticated: Boolean(user),
         email: user?.email ?? null,
@@ -39,8 +40,8 @@ export function PreviewSiteFrame({
       };
       sendAuth();
     };
-    void supabase.auth.getUser().then(({ data }) => { if (active) syncAuth(data.user); }).catch(() => { if (active) syncAuth(null); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => syncAuth(session?.user ?? null));
+    void supabase.auth.getUser().then(({ data }: { data: { user: User | null } }) => { if (active) syncAuth(data.user); }).catch(() => { if (active) syncAuth(null); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => syncAuth(session?.user ?? null));
 
     function receiveMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow) return;
