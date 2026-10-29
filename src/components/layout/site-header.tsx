@@ -22,7 +22,6 @@ const activeCls = "bg-surface-2 text-ink";
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -30,11 +29,9 @@ export function SiteHeader() {
     void supabase.auth.getUser().then(({ data }) => {
       if (!active) return;
       setUserEmail(data.user?.email ?? null);
-      setAuthReady(true);
-    }).catch(() => { if (active) setAuthReady(true); });
+    }).catch(() => { /* keep the signed-out header if session lookup fails */ });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email ?? null);
-      setAuthReady(true);
     });
     return () => { active = false; subscription.unsubscribe(); };
   }, []);
