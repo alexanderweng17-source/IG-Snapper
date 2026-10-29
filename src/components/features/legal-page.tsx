@@ -7,7 +7,7 @@ export function LegalPage({ doc }: { doc: keyof typeof legal }) {
   return (
     <div className="container-page max-w-3xl py-12 sm:py-16">
       <PageHeading crumbs={[{ label: "หน้าแรก", href: "/" }, { label: "นโยบาย" }, { label: d.title }]} title={d.title} description={d.updated} />
-      <DemoBanner>ฉบับร่าง: ข้อความด้านล่างเป็นตัวอย่างโครงสร้างเท่านั้น ต้องได้รับการเขียนและตรวจสอบโดยเจ้าของธุรกิจและผู้เชี่ยวชาญทางกฎหมายก่อนใช้งานจริง</DemoBanner>
+      <DemoBanner>ข้อเสนอร่างนโยบายสำหรับตรวจทานก่อนประกาศใช้ โปรดยืนยันข้อมูลผู้ขาย ช่องทางติดต่อ และรายละเอียดการทำงานจริงของส่วนขยายให้ตรงกับข้อความนี้ก่อนเผยแพร่ฉบับมีผล</DemoBanner>
       <div className="prose-th max-w-none">
         {d.sections.map((s) => (
           <section key={s.h}>
