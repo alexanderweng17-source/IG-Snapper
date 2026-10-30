@@ -26,7 +26,7 @@ export const support = {
 export type Compat = "supported" | "untested" | "unsupported";
 export const compatibility: { name: string; note: string; status: Compat }[] = [
   { name: "Google Chrome บนคอมพิวเตอร์", note: "ส่วนขยายแบบ Manifest V3 (เวอร์ชัน 2.3.1)", status: "supported" }, // TODO: confirm tested Chrome versions
+  { name: "Safari บน iPhone / iPad", note: "ผ่านแอป Userscripts (ฟรี) ต้องใช้ iOS 15.1 ขึ้นไป", status: "supported" },
   { name: "Microsoft Edge, Brave และเบราว์เซอร์ Chromium อื่น ๆ", note: "โครงสร้างเดียวกับ Chrome แต่ยังไม่ได้ยืนยันการทดสอบ", status: "untested" },
-  { name: "Firefox และ Safari", note: "ยังไม่รองรับในเวอร์ชันนี้ ยังไม่มีกำหนดการ", status: "unsupported" },
-  { name: "เบราว์เซอร์บน Android และ iPhone", note: "ใช้ส่วนขยายไม่ได้ (เว็บไซต์นี้เปิดดูและซื้อบนมือถือได้ตามปกติ)", status: "unsupported" },
+  { name: "Firefox, Android และ Safari บน Mac", note: "ยังไม่รองรับในเวอร์ชันนี้ ยังไม่มีกำหนดการ", status: "unsupported" },
 ];

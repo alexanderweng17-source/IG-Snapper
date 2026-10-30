@@ -1,10 +1,10 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { KeyRound, Laptop } from "lucide-react";
+import { KeyRound, Laptop, Smartphone } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { LicenseStatusBadge } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClass } from "@/components/ui/button";
 import { Modal } from "@/components/ui/dialog";
 import { LicenseKey } from "@/components/ui/license-key";
 import { SearchInput } from "@/components/ui/search-input";
@@ -48,6 +48,15 @@ export function LicensesView({ licenses }: { licenses: License[] }) {
               <Button size="sm" variant="ghost" onClick={() => setSel(l)}>{t.common.details}</Button>
             </div>
             <LicenseKey value={l.key} disabled={l.status === "pending"} className="mt-4" />
+            {usable && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <ButtonLink href="/download?device=pc" size="sm" variant="secondary"><Laptop className="size-4" aria-hidden />ติดตั้งบนคอมพิวเตอร์</ButtonLink>
+                <ButtonLink href="/download?device=ios" size="sm" variant="secondary"><Smartphone className="size-4" aria-hidden />ติดตั้งบน iPhone / iPad</ButtonLink>
+                <a href={`https://www.instagram.com/#igs-key=${encodeURIComponent(l.key)}`} className={buttonClass("primary", "sm")}>
+                  <Smartphone className="size-4" aria-hidden />เปิด Instagram พร้อมใส่คีย์ (iPhone / iPad)
+                </a>
+              </div>
+            )}
             {!usable && l.status !== "pending" && <p className="mt-2 text-xs text-faint">{l.status === "expired" ? "ไลเซนส์นี้หมดอายุแล้ว คีย์ใช้งานไม่ได้" : "ไลเซนส์นี้ถูกเพิกถอน คีย์ใช้งานไม่ได้ หากมีข้อสงสัยให้ติดต่อฝ่ายช่วยเหลือ"}</p>}
             {l.status === "pending" && <p className="mt-2 text-xs text-faint">กำลังรอการยืนยันการชำระเงิน คีย์จะแสดงเมื่อยืนยันแล้ว</p>}
             <dl className="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
