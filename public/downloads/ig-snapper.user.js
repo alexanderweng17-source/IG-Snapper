@@ -9,6 +9,8 @@
 // @run-at       document-idle
 // @inject-into  content
 // @connect      hihhomdldouekdymgmzn.supabase.co
+// @updateURL    https://ig-snapper.vercel.app/downloads/ig-snapper.user.js
+// @downloadURL  https://ig-snapper.vercel.app/downloads/ig-snapper.user.js
 // @grant        GM.getValue
 // @grant        GM.setValue
 // @grant        GM.xmlHttpRequest
