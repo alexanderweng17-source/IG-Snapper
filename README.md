@@ -74,3 +74,19 @@ Set Supabase Auth's Site URL and the following redirect URL before testing email
 ## Not yet verified
 
 The production build and TypeScript check should be run before each UI release. No live end-to-end Stripe payment has been run; leave checkout disabled until prices and secrets are confirmed and a test purchase succeeds.
+
+
+
+## Project organization and AI hand-off
+
+The repository is one coordinated codebase with separate source areas and device-specific release/workspaces:
+
+- `extension/chrome/` — the single canonical source for the Chrome desktop extension.
+- `tools/build-ios.mjs` — builds the Safari userscript from the same Chrome source.
+- `src/` — Next.js storefront, authentication, customer dashboard, admin and API.
+- `supabase/` — ordered database migrations, the `verify-license` Edge Function and generated database types.
+- `workspace/` — AI development hand-off; start at `workspace/README.md`, then choose shared, Chrome, iOS, Web or Supabase instructions.
+- `releases/v2.3.2/` — built customer deliverables grouped by Chrome desktop and iPhone/iPad Safari.
+- `archive/` — retired packages and one-off maintenance scripts; never used as build input.
+
+**Source of truth:** edit `extension/chrome/`, `src/` or `supabase/`, never a release ZIP or generated userscript. For platform changes, follow the workspace guide. The Vercel root remains the repository root because the Next.js app and its configuration live here.

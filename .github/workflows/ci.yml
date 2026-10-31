@@ -14,6 +14,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+          cache: true
       - run: npm ci
+      - run: deno check supabase/functions/verify-license/index.ts
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build

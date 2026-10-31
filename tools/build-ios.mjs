@@ -55,7 +55,7 @@ bg = bg.slice(0, bg.indexOf("chrome.action.onClicked.addListener"));
 const cfg = rd("license-config.js");
 
 // ---- script.js: optionally start as the floating orb so Instagram stays usable
-let sc = rd("script.js");
+let sc = rd("script.js").replace(/\r\n/g, "\n");
 const marker = 'setLocale(getPreferredLocale(), false);\ndocument\n  .getElementById("findNonFollowersButton")';
 if (!sc.includes(marker)) throw new Error("script.js layout changed: start-minimized marker not found");
 sc = sc.replace(

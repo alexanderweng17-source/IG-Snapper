@@ -7,8 +7,9 @@ node_modules/
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+playwright-report/
+test-results/
+supabase/.temp/
+supabase/.branches/
 .DS_Store
 Thumbs.db
-
-.vercel
-.env*
