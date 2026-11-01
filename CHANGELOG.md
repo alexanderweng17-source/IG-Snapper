@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.4 — 2026-11-01
+
+- Complete Snapshot History tab accessibility: tablist/tabpanel labelling, aria-controls/aria-labelledby, roving tab focus, Arrow/Home/End keyboard navigation and focus restoration after selecting a tab.
+- Increase History Detail category tab hit targets to 44px minimum for touch screens.
+- Correct the Extension header's stale hard-coded version label to match manifest v2.3.4.
+- Expose server-derived checkout availability in the Store plans API. Direct Checkout pages and buttons remain disabled unless every visible plan is explicitly checkout-enabled; the action handler also fails closed.
+- Add regression tests for accessible tab semantics, keyboard navigation, version consistency and server-driven checkout state.
+
 ## 2.3.3 — 2026-11-01
 
 - Require verified, complete Followers and Following pagination metadata before creating or comparing a History snapshot; legacy snapshots remain stored but are marked unverified and cannot create change events.

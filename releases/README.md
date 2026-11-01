@@ -2,8 +2,9 @@
 
 Versioned, device-specific customer deliverables live here. This folder does not contain editable source.
 
-- v2.3.3/chrome/IG-Snapper-v2.3.3-customer.zip — Chrome desktop extension package.
-- v2.3.3/ios/ig-snapper.user.js — iPhone/iPad Safari userscript.
+- v2.3.4/chrome/IG-Snapper-v2.3.4-customer.zip — Chrome desktop extension package.
+- v2.3.4/ios/ig-snapper.user.js — iPhone/iPad Safari userscript.
+- v2.3.3/ — previous customer release retained for reference.
 - v2.3.2/ — previous customer release retained for reference.
 - current/README.md — current release pointer.
 

@@ -24,7 +24,7 @@ IG-Snapper/
 │  ├─ web/
 │  ├─ supabase/
 │  └─ ai-prompts/
-├─ releases/v2.3.2/
+├─ releases/vX.Y.Z/
 │  ├─ chrome/                   # Customer ZIP
 │  └─ ios/                      # Safari userscript
 ├─ archive/                     # Retired packages / one-off scripts

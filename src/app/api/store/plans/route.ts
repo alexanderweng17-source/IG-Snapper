@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { data } from "@/lib/data";
+import { checkoutIsEnabled } from "@/lib/store/plans";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,8 +8,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const plans = await data.listPlans();
+    const visiblePlans = plans.filter((plan) => plan.visible);
+    const checkoutEnabled = visiblePlans.length > 0 && visiblePlans.every(checkoutIsEnabled);
     return NextResponse.json({
+      checkoutEnabled,
       plans: plans.map((plan) => ({
+        checkoutEnabled: checkoutIsEnabled(plan),
         slug: plan.slug,
         name: plan.name,
         durationDays: plan.durationDays,

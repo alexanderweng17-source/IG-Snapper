@@ -354,3 +354,30 @@ test("Snapshot compaction reads nested GraphQL node IDs", () => {
     [["graph-77", "graph_user", ""]]
   );
 });
+
+test("History change tabs implement the accessible tablist keyboard pattern", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const html = fs.readFileSync(path.join(__dirname, "../extension/chrome/html.js"), "utf8");
+  const script = fs.readFileSync(path.join(__dirname, "../extension/chrome/script.js"), "utf8");
+  const css = fs.readFileSync(path.join(__dirname, "../extension/chrome/style.css"), "utf8");
+
+  assert.match(html, /id="historyDetailTabs"[^>]*role="tablist"/);
+  assert.match(html, /id="historyDetailList"[^>]*role="tabpanel"/);
+  assert.match(script, /setAttribute\("aria-controls", "historyDetailList"\)/);
+  assert.match(script, /setAttribute\("aria-labelledby", `history-tab-\$\{activeDef\.id\}`\)/);
+  assert.match(script, /case "ArrowRight":[\s\S]*case "ArrowDown"/);
+  assert.match(script, /case "ArrowLeft":[\s\S]*case "ArrowUp"/);
+  assert.match(script, /case "Home":[\s\S]*case "End"/);
+  assert.match(script, /button\.tabIndex = def\.id === tab \? 0 : -1/);
+  assert.match(css, /\.detail-tab\s*\{[^}]*min-height:\s*2\.75rem/s);
+});
+
+test("extension visible version is pinned to the customer manifest", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "../extension/chrome/manifest.json"), "utf8"));
+  const html = fs.readFileSync(path.join(__dirname, "../extension/chrome/html.js"), "utf8");
+  assert.equal(manifest.version, "2.3.4");
+  assert.ok(html.includes('<span class="kicker-ver">v2.3.4</span>'));
+});

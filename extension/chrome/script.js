@@ -68,6 +68,7 @@ const translations = {
     history: "History",
     historyTitle: "Scan history",
     historySubtitle: "History compares account membership between two complete scans. It is not an Instagram activity log and cannot prove when you tapped Follow.",
+    historyTabsLabel: "Snapshot change categories",
     closeHistory: "Close history",
     historyNoData: "No snapshots yet. Run a complete scan and save one.",
     historyFirst: "Baseline snapshot",
@@ -248,6 +249,7 @@ const translations = {
     history: "ประวัติ",
     historyTitle: "ประวัติการสแกน",
     historySubtitle: "ประวัตินี้เปรียบเทียบสมาชิกในรายชื่อจากการสแกนที่สมบูรณ์สองครั้ง ไม่ใช่บันทึกกิจกรรมของ Instagram จึงยืนยันไม่ได้ว่าคุณกดติดตามเมื่อใด",
+    historyTabsLabel: "หมวดหมู่การเปลี่ยนแปลงในสแนปช็อต",
     closeHistory: "ปิดประวัติ",
     historyNoData: "ยังไม่มีสแนปช็อต ลองสแกนให้ครบแล้วบันทึกไว้หนึ่งรายการ",
     historyFirst: "สแนปช็อตเริ่มต้น",
@@ -1586,8 +1588,11 @@ function renderHistoryDetail() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `detail-tab tone-${def.tone}`;
+    button.id = `history-tab-${def.id}`;
     button.setAttribute("role", "tab");
     button.setAttribute("aria-selected", String(def.id === tab));
+    button.setAttribute("aria-controls", "historyDetailList");
+    button.tabIndex = def.id === tab ? 0 : -1;
     button.dataset.tab = def.id;
     button.innerHTML = `${icon(def.icon, 15)}<span>${t(def.label)}</span><b>${groups[def.id].length}</b>`;
     historyDetailTabs.append(button);
@@ -1595,6 +1600,7 @@ function renderHistoryDetail() {
 
   const activeDef = DETAIL_TABS.find((def) => def.id === tab) || DETAIL_TABS[0];
   historyDetailNote.textContent = groups[activeDef.id].length ? t(activeDef.note) : "";
+  historyDetailList.setAttribute("aria-labelledby", `history-tab-${activeDef.id}`);
 
   historyDetailList.innerHTML = "";
   const users = [...groups[activeDef.id]].sort((a, b) =>
@@ -1652,11 +1658,47 @@ historyList.addEventListener("click", (event) => {
   const row = event.target.closest(".history-row[data-index]");
   if (row) openHistoryDetail(Number(row.dataset.index));
 });
+function selectHistoryDetailTab(tabId, { focus = false } = {}) {
+  if (!DETAIL_TABS.some((def) => def.id === tabId)) return;
+  historyDetailState.tab = tabId;
+  renderHistoryDetail();
+  if (focus) {
+    historyDetailTabs.querySelector(`[data-tab="${tabId}"]`)?.focus({ preventScroll: true });
+  }
+}
+
 historyDetailTabs.addEventListener("click", (event) => {
   const tabButton = event.target.closest(".detail-tab");
   if (!tabButton) return;
-  historyDetailState.tab = tabButton.dataset.tab;
-  renderHistoryDetail();
+  selectHistoryDetailTab(tabButton.dataset.tab, { focus: true });
+});
+historyDetailTabs.addEventListener("keydown", (event) => {
+  const tabs = [...historyDetailTabs.querySelectorAll(".detail-tab")];
+  const activeIndex = tabs.indexOf(document.activeElement);
+  if (activeIndex < 0 || !tabs.length) return;
+
+  let nextIndex = activeIndex;
+  switch (event.key) {
+    case "ArrowRight":
+    case "ArrowDown":
+      nextIndex = (activeIndex + 1) % tabs.length;
+      break;
+    case "ArrowLeft":
+    case "ArrowUp":
+      nextIndex = (activeIndex - 1 + tabs.length) % tabs.length;
+      break;
+    case "Home":
+      nextIndex = 0;
+      break;
+    case "End":
+      nextIndex = tabs.length - 1;
+      break;
+    default:
+      return;
+  }
+
+  event.preventDefault();
+  selectHistoryDetailTab(tabs[nextIndex].dataset.tab, { focus: true });
 });
 document.getElementById("historyDetailBack").addEventListener("click", closeHistoryDetail);
 document.getElementById("historyCopyButton").addEventListener("click", async () => {
@@ -2362,7 +2404,7 @@ document
     const counts = core.countRelationships([...loadedUsers.values()]);
     const report = {
       extension: "IG Snapper",
-      version: "2.3.3",
+      version: "2.3.4",
       locale: currentLocale,
       view: caller || "home",
       filter: currentFilter,

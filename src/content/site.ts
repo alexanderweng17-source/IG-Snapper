@@ -1,12 +1,12 @@
 /**
  * Business facts the site displays. Everything marked TODO must be confirmed by the owner.
- * Facts about the extension were read from the v2.3.3 customer package
+ * Facts about the extension were read from the v2.3.4 customer package
  * (manifest.json, background.js, UI strings).
  */
 export const product = {
   name: "IG Snapper",
-  version: "2.3.3", // from manifest.json
-  packageName: "IG-Snapper-v2.3.3-customer.zip",
+  version: "2.3.4", // from manifest.json
+  packageName: "IG-Snapper-v2.3.4-customer.zip",
   // Chrome ZIP downloads are delivered by an authenticated server route. The public iOS script declares update metadata; users check for updates from the Userscripts Popup.
   downloadUrl: "/api/downloads/chrome",
   /** Default limits from background.js comments: "1 account / 2 browsers, set per key". TODO confirm before selling. */

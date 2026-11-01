@@ -1410,7 +1410,7 @@
   .detail-range { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
   .detail-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; }
   .detail-tab {
-    display: flex; align-items: center; gap: 0.45rem; min-width: 0; padding: 0.6rem 0.75rem; border: 0; border-radius: var(--radius-md);
+    display: flex; align-items: center; gap: 0.45rem; min-width: 0; min-height: 2.75rem; padding: 0.6rem 0.75rem; border: 0; border-radius: var(--radius-md);
     text-align: left; font-size: var(--text-sm); font-weight: 600; color: var(--color-neutral);
     background: var(--color-glass); box-shadow: inset 0 0 0 1px var(--color-rule-soft);
     transition: background var(--dur-short), box-shadow var(--dur-short), color var(--dur-short);

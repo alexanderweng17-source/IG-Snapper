@@ -109,7 +109,7 @@ const init = () => {
             <span class="brand-mark" aria-hidden="true">${logoMark("bm-logo", 36)}</span>
             <div class="brand-copy">
               <h1 id="appTitle" data-i18n="appTitle">IG Snapper</h1>
-              <p class="app-kicker"><span class="live-dot" aria-hidden="true"></span>Instagram<span class="kicker-sep" aria-hidden="true"></span><span class="kicker-ver">v2.3.1</span></p>
+              <p class="app-kicker"><span class="live-dot" aria-hidden="true"></span>Instagram<span class="kicker-sep" aria-hidden="true"></span><span class="kicker-ver">v2.3.4</span></p>
             </div>
           </div>
 
@@ -309,9 +309,9 @@ const init = () => {
                 <button type="button" id="historyCopyButton" class="text-button detail-copy">${icon("copy", 16)}<span data-i18n="copyUsernames">Copy usernames</span></button>
               </div>
               <p id="historyDetailRange" class="detail-range"></p>
-              <div id="historyDetailTabs" class="detail-tabs" role="tablist"></div>
+              <div id="historyDetailTabs" class="detail-tabs" role="tablist" data-i18n-aria-label="historyTabsLabel" aria-label="History change categories"></div>
               <p id="historyDetailNote" class="detail-note"></p>
-              <div id="historyDetailList" class="profile-grid"></div>
+              <div id="historyDetailList" class="profile-grid" role="tabpanel" tabindex="0" aria-labelledby="history-tab-lost"></div>
             </div>
           </div>
         </div>
