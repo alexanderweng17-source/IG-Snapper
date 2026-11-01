@@ -13,4 +13,6 @@ node tools/build-ios.mjs extension/chrome public/downloads/ig-snapper.user.js ht
 node --check public/downloads/ig-snapper.user.js
 ```
 
-Before release, copy the generated userscript into `releases/vX.Y.Z/ios/`, compare its header version with `extension/chrome/manifest.json`, then test installation, update, activation, storage, touch UI, safe-area behavior and long scans on a real iPhone and iPad. Desktop syntax checks are not real-device tests.
+The script declares @version, @updateURL and @downloadURL. To check for a new version, open the script's Popup in Userscripts and choose Update/Available Updates; do not promise automatic checks because app settings or versions can disable them.
+
+Before release, copy the generated userscript into releases/vX.Y.Z/ios/, compare its header version with extension/chrome/manifest.json, then test installation, update, activation, account-scoped storage, History baselines, touch UI, safe-area behavior and long scans on a real iPhone and iPad. Desktop syntax checks are not real-device tests.

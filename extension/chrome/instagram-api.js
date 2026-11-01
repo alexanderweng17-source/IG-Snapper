@@ -102,8 +102,18 @@
   const sleep = (ms, signal) =>
     new Promise((resolve, reject) => {
       if (signal?.aborted) return reject(makeAbortError());
-      const timer = setTimeout(resolve, ms);
-      signal?.addEventListener("abort", () => { clearTimeout(timer); reject(makeAbortError()); }, { once: true });
+      let timer;
+      const cleanup = () => signal?.removeEventListener("abort", onAbort);
+      const onAbort = () => {
+        clearTimeout(timer);
+        cleanup();
+        reject(makeAbortError());
+      };
+      timer = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, ms);
+      signal?.addEventListener("abort", onAbort, { once: true });
     });
   function makeAbortError() {
     const error = new Error("Cancelled");
@@ -233,7 +243,6 @@
     const candidates = [
       data?.data?.user?.edge_followed_by?.edges,
       data?.data?.user?.edge_follow?.edges,
-      data?.data?.user?.edge_follow?.edges,
     ];
     const edges = candidates.find(Array.isArray);
     return edges ? edges.map((edge) => edge?.node).filter(Boolean) : null;
@@ -250,45 +259,54 @@
   }
 
   function getNextCursor(data) {
-    const pageInfo =
-      data?.page_info ||
-      data?.pagination?.page_info ||
-      data?.data?.page_info ||
-      data?.data?.user?.edge_followed_by?.page_info ||
-      data?.data?.user?.edge_follow?.page_info;
+    const pageInfos = [
+      data?.page_info,
+      data?.pagination?.page_info,
+      data?.data?.page_info,
+      data?.data?.pagination?.page_info,
+      data?.data?.user?.edge_followed_by?.page_info,
+      data?.data?.user?.edge_follow?.page_info,
+    ].filter(Boolean);
 
-    return (
-      data?.next_max_id ??
-      data?.pagination?.next_max_id ??
-      data?.next_cursor ??
-      data?.pagination_token ??
-      pageInfo?.end_cursor ??
-      null
-    );
+    const cursors = [
+      data?.next_max_id,
+      data?.pagination?.next_max_id,
+      data?.data?.next_max_id,
+      data?.next_cursor,
+      data?.pagination_token,
+      ...pageInfos.flatMap((pageInfo) => [
+        pageInfo.end_cursor,
+        pageInfo.next_max_id,
+        pageInfo.next_cursor,
+      ]),
+    ];
+    return cursors.find((value) => value != null && String(value).trim() !== "") ?? null;
   }
 
   function hasMore(data, cursor) {
-    // Prefer explicit pagination flags. If Instagram says another page exists
-    // but omits the cursor, requestConnections() will reject the scan instead
-    // of quietly treating a partial list as complete.
-    if (
-      data?.has_more === true ||
-      data?.more_available === true ||
-      data?.pagination?.has_more === true ||
-      data?.pagination?.more_available === true ||
-      data?.page_info?.has_next_page === true ||
-      data?.data?.page_info?.has_next_page === true ||
-      data?.data?.user?.edge_followed_by?.page_info?.has_next_page === true ||
-      data?.data?.user?.edge_follow?.page_info?.has_next_page === true
-    ) return true;
+    const pageInfos = [
+      data?.page_info,
+      data?.pagination?.page_info,
+      data?.data?.page_info,
+      data?.data?.pagination?.page_info,
+      data?.data?.user?.edge_followed_by?.page_info,
+      data?.data?.user?.edge_follow?.page_info,
+    ].filter(Boolean);
+    const flags = [
+      data?.has_more,
+      data?.more_available,
+      data?.pagination?.has_more,
+      data?.pagination?.more_available,
+      data?.data?.has_more,
+      data?.data?.more_available,
+      ...pageInfos.map((pageInfo) => pageInfo.has_next_page ?? pageInfo.hasNextPage),
+    ];
 
-    if (data?.has_more === false || data?.more_available === false) return false;
-    if (data?.pagination?.has_more === false || data?.pagination?.more_available === false) return false;
-    if (data?.page_info?.has_next_page === false) return false;
-    if (data?.data?.page_info?.has_next_page === false) return false;
-    if (data?.data?.user?.edge_followed_by?.page_info?.has_next_page === false) return false;
-    if (data?.data?.user?.edge_follow?.page_info?.has_next_page === false) return false;
-    return Boolean(cursor);
+    // An explicit positive signal always wins. Without a positive or negative
+    // terminal signal, a cursor means another page; no cursor is ambiguous.
+    if (flags.some((flag) => flag === true)) return true;
+    if (flags.some((flag) => flag === false)) return false;
+    return cursor ? true : null;
   }
 
   function isUsableListPayload(data) {
@@ -418,7 +436,9 @@
   }
 
   async function requestConnections(type, onProgress, options = {}) {
-    const { signal, pageDelayMs = 350 } = options;
+    // A shorter, jittered gap improves large-list scans without removing the
+    // exponential back-off used for 429s, timeouts, and transient server errors.
+    const { signal, pageDelayMs = 150 } = options;
     const viewerId = await resolveViewerId();
 
     const users = [];
@@ -453,8 +473,17 @@
 
       let added = 0;
       for (const rawUser of result.users) {
-        const id = String(rawUser?.id ?? rawUser?.pk ?? rawUser?.user?.id ?? rawUser?.user?.pk ?? "");
-        if (!id || seen.has(id)) continue;
+        const nested = rawUser?.user && typeof rawUser.user === "object"
+          ? rawUser.user
+          : rawUser?.node && typeof rawUser.node === "object"
+          ? rawUser.node
+          : rawUser;
+        const rawId = nested?.id ?? nested?.pk ?? rawUser?.id ?? rawUser?.pk;
+        const id = rawId == null ? "" : String(rawId).trim();
+        if (!id || id === "undefined" || id === "null") {
+          throw new Error(`Incomplete ${type.toLowerCase()} scan: Instagram returned an account without a stable ID. No snapshot was recorded.`);
+        }
+        if (seen.has(id)) continue;
         seen.add(id);
         users.push(rawUser);
         added += 1;
@@ -473,7 +502,10 @@
 
       // Never cache or snapshot a partial list. These guards used to stop the
       // loop silently, which made missing pages look like genuine relationship changes.
-      if (!result.hasMore) {
+      if (result.hasMore === null) {
+        throw new Error(`Incomplete ${type.toLowerCase()} scan: Instagram did not provide a reliable pagination end signal. Refresh and retry; no history event was recorded.`);
+      }
+      if (result.hasMore === false) {
         nextCursor = null;
       } else {
         const cursor = result.nextCursor == null ? "" : String(result.nextCursor);
@@ -492,7 +524,7 @@
 
         seenCursors.add(cursor);
         nextCursor = cursor;
-        await sleep(pageDelayMs + Math.random() * 250, signal);
+        await sleep(pageDelayMs + Math.random() * 150, signal);
       }
     } while (nextCursor);
 
@@ -501,6 +533,9 @@
       providerId,
       pages: page,
       viewerId,
+      count: users.length,
+      complete: true,
+      completedAt: Date.now(),
     };
   }
 

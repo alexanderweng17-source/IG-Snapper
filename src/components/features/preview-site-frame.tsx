@@ -60,7 +60,11 @@ export function PreviewSiteFrame({
     }
 
     window.addEventListener("message", receiveMessage);
-    return () => window.removeEventListener("message", receiveMessage);
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+      window.removeEventListener("message", receiveMessage);
+    };
   }, []);
 
   return (
@@ -71,6 +75,7 @@ export function PreviewSiteFrame({
       className="block w-full border-0 bg-[#0a0c14]"
       style={{ height, minHeight: "100vh", border: 0 }}
       loading="eager"
+      onLoad={sendAuth}
       allow="clipboard-write"
     />
   );

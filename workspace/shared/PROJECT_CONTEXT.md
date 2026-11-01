@@ -13,7 +13,9 @@
 
 ## Required product behavior
 - Do not reintroduce per-user or bulk Unfollow controls, endpoints or dialogs.
-- History compares complete snapshots by stable Instagram user ID, not list order or mutable usernames.
+- History compares only schema-v2 snapshots with verified, complete Followers and Following scans, matched viewer IDs, page counts and stable user IDs—not list order or mutable usernames.
+- History is a list-membership comparison, never proof of an Instagram Follow/Unfollow activity or its timestamp. Older snapshots without integrity metadata stay stored but cannot produce change events.
+- Do not compare or display snapshots across Instagram viewer IDs; load the corresponding account's local history before starting a scan.
 - A user disappearing from Followers does not prove a deliberate unfollow. It may be a block, deactivation, deletion or another platform-side change. The UI must say this clearly.
 - Distinguish lost followers, lost followers still present in Following, users removed from both lists, new followers, and changes in Following.
 - Never save a partial pagination result as a complete snapshot.

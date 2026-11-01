@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { product } from "@/content/site";
 import { getCurrentUser, isAdminEmail } from "@/lib/supabase/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -44,14 +43,14 @@ export async function GET(request: Request) {
     const allowed = isAdminEmail(user.email) || await hasActivePurchasedLicense(user.id);
     if (!allowed) return NextResponse.redirect(new URL("/pricing?download=license-required", request.url));
 
-    const filePath = path.join(process.cwd(), "releases", `v${product.version}`, "chrome", product.packageName);
+    const filePath = path.join(process.cwd(), "releases", "v2.3.3", "chrome", "IG-Snapper-v2.3.3-customer.zip");
     const file = await readFile(filePath);
     return new Response(new Uint8Array(file), {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
         "Content-Length": String(file.byteLength),
-        "Content-Disposition": `attachment; filename="${product.packageName}"`,
+        "Content-Disposition": `attachment; filename="IG-Snapper-v2.3.3-customer.zip"`,
         "Cache-Control": "private, no-store, max-age=0",
         "X-Content-Type-Options": "nosniff",
       },

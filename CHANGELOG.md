@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.3.3 — 2026-11-01
+
+- Require verified, complete Followers and Following pagination metadata before creating or comparing a History snapshot; legacy snapshots remain stored but are marked unverified and cannot create change events.
+- Normalize nested Instagram user / GraphQL node IDs consistently across transport, cache and snapshot compaction; reject missing or invalid stable IDs instead of silently dropping entries.
+- Scope Snapshot History and protected-user lists to the current Instagram account; reject cross-account comparisons and backups, and wait for matching local state before loading a new account.
+- Rename History's “You followed” claim to “New in Following” and explicitly explain that Snapshot comparison is not an Instagram activity log.
+- Recognize nested pagination cursors and terminal flags; fail closed on an ambiguous final page and preserve retry/back-off for rate limits and transient errors.
+- Reduce the inter-page pacing delay while retaining retry/back-off and concurrent Followers/Following scans; preserve chunked list rendering and lazy-loaded avatars.
+- Fix PreviewSiteFrame auth-listener cleanup and resend auth state when its iframe loads.
+- Update Store/Download copy for Chrome desktop and iPhone/iPad, manual Userscripts update instructions and the intentionally closed checkout.
+- Remove legacy, unreferenced React storefront components and their duplicate FAQ/feature content source; keep the embedded Preview HTML as the active Store UI.
+
 ## 2.3.2 — 2026-11-01
 
 - Removed the Unfollow action from customer UI, shared relationship states, storage/rate-limit state, styles, labels and API providers. Follow is the only relationship action left.

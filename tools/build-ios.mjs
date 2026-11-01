@@ -204,4 +204,4 @@ out += "})();\n";
 
 fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true });
 fs.writeFileSync(outFile, out, "utf8");
-console.log(`built ${outFile} (${out.length} bytes, v${version}${siteUrl ? ", auto-update " + siteUrl : ""})`);
+console.log(`built ${outFile} (${out.length} bytes, v${version}${siteUrl ? ", update URL " + siteUrl : ""})`);

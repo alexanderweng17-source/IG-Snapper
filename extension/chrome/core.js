@@ -4,16 +4,27 @@
   if (root) root.ManageInstagramFollowersCore = core;
 })(typeof window !== "undefined" ? window : globalThis, function createCore() {
   function normalizeConnectionUser(user, type) {
-    const friendship = user.friendship_status || {};
+    const envelope = user && typeof user === "object" ? user : {};
+    const nested = envelope.user && typeof envelope.user === "object"
+      ? envelope.user
+      : envelope.node && typeof envelope.node === "object"
+      ? envelope.node
+      : envelope;
+    const rawId = nested.id ?? nested.pk ?? envelope.id ?? envelope.pk;
+    const id = rawId == null ? "" : String(rawId).trim();
+    if (!id || id === "undefined" || id === "null") return null;
+
+    const friendship = nested.friendship_status || envelope.friendship_status || {};
     return {
-      ...user,
-      id: String(user.id || user.pk),
+      ...envelope,
+      ...nested,
+      id,
       followed_by_viewer:
-        user.followed_by_viewer ?? friendship.following ?? type === "Following",
+        nested.followed_by_viewer ?? envelope.followed_by_viewer ?? friendship.following ?? type === "Following",
       follows_viewer:
-        user.follows_viewer ?? friendship.followed_by ?? type === "Followers",
+        nested.follows_viewer ?? envelope.follows_viewer ?? friendship.followed_by ?? type === "Followers",
       requested_by_viewer:
-        user.requested_by_viewer ?? friendship.outgoing_request ?? false,
+        nested.requested_by_viewer ?? envelope.requested_by_viewer ?? friendship.outgoing_request ?? false,
     };
   }
 
@@ -179,26 +190,75 @@
   function compactSnapshotUsers(users = []) {
     const seen = new Set();
     return users.reduce((result, user) => {
-      const id = String(user?.id ?? user?.pk ?? "");
-      if (!id || seen.has(id)) return result;
+      const rawId = user?.id ?? user?.pk ?? user?.user?.id ?? user?.user?.pk ?? user?.node?.id ?? user?.node?.pk;
+      const id = rawId == null ? "" : String(rawId).trim();
+      if (!id || id === "undefined" || id === "null" || seen.has(id)) return result;
       seen.add(id);
       result.push([
         id,
-        String(user?.username ?? ""),
-        String(user?.full_name ?? ""),
+        String(user?.username ?? user?.user?.username ?? user?.node?.username ?? ""),
+        String(user?.full_name ?? user?.user?.full_name ?? user?.node?.full_name ?? ""),
       ]);
       return result;
     }, []);
   }
 
-  function buildSnapshot({ viewerId, following = [], followers = [], createdAt = Date.now() }) {
-    return {
-      id: `${String(viewerId || "unknown")}:${createdAt}`,
-      viewerId: viewerId ? String(viewerId) : null,
-      createdAt,
-      following: compactSnapshotUsers(following),
-      followers: compactSnapshotUsers(followers),
+  function isSnapshotComplete(snapshot) {
+    if (
+      !snapshot ||
+      snapshot.schemaVersion !== 2 ||
+      snapshot.integrity?.complete !== true ||
+      snapshot.integrity?.schemaVersion !== 2 ||
+      !snapshot.viewerId ||
+      !Array.isArray(snapshot.following) ||
+      !Array.isArray(snapshot.followers)
+    ) return false;
+
+    return ["following", "followers"].every((key) => {
+      const scan = snapshot.integrity[key];
+      const list = snapshot[key];
+      if (
+        !scan ||
+        scan.complete !== true ||
+        String(scan.viewerId || "") !== String(snapshot.viewerId) ||
+        !Number.isInteger(scan.pages) ||
+        scan.pages < 1 ||
+        scan.count !== list.length
+      ) return false;
+
+      const ids = new Set();
+      for (const entry of list) {
+        if (!Array.isArray(entry) || entry.length < 1) return false;
+        const id = String(entry[0] ?? "").trim();
+        if (!id || id === "undefined" || id === "null" || ids.has(id)) return false;
+        ids.add(id);
+      }
+      return true;
+    });
+  }
+
+  function buildSnapshot({ viewerId, following = [], followers = [], scan = null, createdAt = Date.now() }) {
+    const accountId = viewerId == null ? "" : String(viewerId).trim();
+    const compactFollowing = compactSnapshotUsers(following);
+    const compactFollowers = compactSnapshotUsers(followers);
+    const integrity = {
+      schemaVersion: 2,
+      complete: Boolean(accountId && scan?.following?.complete === true && scan?.followers?.complete === true),
+      following: scan?.following || null,
+      followers: scan?.followers || null,
     };
+    const snapshot = {
+      id: `${accountId || "unknown"}:${createdAt}`,
+      viewerId: accountId || null,
+      schemaVersion: 2,
+      integrity,
+      createdAt,
+      following: compactFollowing,
+      followers: compactFollowers,
+    };
+    if (isSnapshotComplete(snapshot)) return snapshot;
+    integrity.complete = false;
+    return snapshot;
   }
 
   function snapshotMap(list = []) {
@@ -232,14 +292,20 @@
   }
 
   function diffSnapshots(previous, current) {
-    if (!previous || !current) {
-      return {
-        comparable: false,
-        following: { added: [], removed: [] },
-        followers: { added: [], removed: [] },
-        lostStillFollowing: [],
-        bothRemoved: [],
-      };
+    const emptyDiff = (reason) => ({
+      comparable: false,
+      reason,
+      following: { added: [], removed: [] },
+      followers: { added: [], removed: [] },
+      lostStillFollowing: [],
+      bothRemoved: [],
+    });
+    if (!previous || !current) return emptyDiff("baseline");
+    if (!isSnapshotComplete(previous) || !isSnapshotComplete(current)) {
+      return emptyDiff("unverified");
+    }
+    if (String(previous.viewerId) !== String(current.viewerId)) {
+      return emptyDiff("different-viewer");
     }
 
     const following = diffSnapshotLists(previous.following, current.following);
@@ -249,6 +315,7 @@
 
     return {
       comparable: true,
+      reason: null,
       following,
       followers,
       // Accounts that stopped following the viewer but remain in the viewer's
@@ -291,6 +358,7 @@
     countRelationships,
     diffSnapshots,
     diffSnapshotLists,
+    isSnapshotComplete,
     filterUsers,
     getAccountSignals,
     getRelationshipState,

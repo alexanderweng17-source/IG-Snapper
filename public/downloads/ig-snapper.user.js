@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         IG Snapper (iPhone / iPad)
 // @namespace    ig-snapper
-// @version      2.3.2
+// @version      2.3.3
 // @description  IG Snapper for Safari on iPhone and iPad (Userscripts app)
 // @match        https://www.instagram.com/*
 // @match        https://instagram.com/*
@@ -113,12 +113,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const accountId = String(message.payload?.accountId || "default");
       const accountWhitelist = localState.whitelists?.[accountId];
       const accountSnapshots = Array.isArray(localState.snapshots)
-        ? localState.snapshots.filter((snapshot) => !snapshot?.viewerId || String(snapshot.viewerId) === accountId)
+        ? localState.snapshots.filter((snapshot) => accountId === "default"
+          ? !snapshot?.viewerId
+          : snapshot?.viewerId && String(snapshot.viewerId) === accountId)
         : [];
       sendResponse({
         locale: localState.locale,
         rateLimits: sessionState.rateLimits,
-        whitelist: Array.isArray(accountWhitelist) ? accountWhitelist : (localState.whitelist || []),
+        whitelist: Array.isArray(accountWhitelist)
+          ? accountWhitelist
+          : accountId === "default" && Array.isArray(localState.whitelist)
+          ? localState.whitelist
+          : [],
         snapshots: accountSnapshots,
         settings: localState.settings || {},
       });
@@ -696,7 +702,11 @@ if (!window.__manageInstagramFollowersStorageBridge) {
         : {};
       whitelists[accountId] = sanitizedWhitelist;
       const existingSnapshotsState = await chrome.storage.local.get("snapshots");
-      const incomingSnapshots = Array.isArray(payload.snapshots) ? payload.snapshots.slice(0, 12) : [];
+      const incomingSnapshots = (Array.isArray(payload.snapshots) ? payload.snapshots : [])
+        .filter((snapshot) => accountId === "default"
+          ? !snapshot?.viewerId
+          : snapshot?.viewerId && String(snapshot.viewerId) === accountId)
+        .slice(0, 12);
       const otherAccountSnapshots = Array.isArray(existingSnapshotsState.snapshots)
         ? existingSnapshotsState.snapshots.filter((snapshot) => String(snapshot?.viewerId || "default") !== accountId)
         : [];
@@ -745,16 +755,27 @@ if (!window.__manageInstagramFollowersStorageBridge) {
   if (root) root.ManageInstagramFollowersCore = core;
 })(typeof window !== "undefined" ? window : globalThis, function createCore() {
   function normalizeConnectionUser(user, type) {
-    const friendship = user.friendship_status || {};
+    const envelope = user && typeof user === "object" ? user : {};
+    const nested = envelope.user && typeof envelope.user === "object"
+      ? envelope.user
+      : envelope.node && typeof envelope.node === "object"
+      ? envelope.node
+      : envelope;
+    const rawId = nested.id ?? nested.pk ?? envelope.id ?? envelope.pk;
+    const id = rawId == null ? "" : String(rawId).trim();
+    if (!id || id === "undefined" || id === "null") return null;
+
+    const friendship = nested.friendship_status || envelope.friendship_status || {};
     return {
-      ...user,
-      id: String(user.id || user.pk),
+      ...envelope,
+      ...nested,
+      id,
       followed_by_viewer:
-        user.followed_by_viewer ?? friendship.following ?? type === "Following",
+        nested.followed_by_viewer ?? envelope.followed_by_viewer ?? friendship.following ?? type === "Following",
       follows_viewer:
-        user.follows_viewer ?? friendship.followed_by ?? type === "Followers",
+        nested.follows_viewer ?? envelope.follows_viewer ?? friendship.followed_by ?? type === "Followers",
       requested_by_viewer:
-        user.requested_by_viewer ?? friendship.outgoing_request ?? false,
+        nested.requested_by_viewer ?? envelope.requested_by_viewer ?? friendship.outgoing_request ?? false,
     };
   }
 
@@ -920,26 +941,75 @@ if (!window.__manageInstagramFollowersStorageBridge) {
   function compactSnapshotUsers(users = []) {
     const seen = new Set();
     return users.reduce((result, user) => {
-      const id = String(user?.id ?? user?.pk ?? "");
-      if (!id || seen.has(id)) return result;
+      const rawId = user?.id ?? user?.pk ?? user?.user?.id ?? user?.user?.pk ?? user?.node?.id ?? user?.node?.pk;
+      const id = rawId == null ? "" : String(rawId).trim();
+      if (!id || id === "undefined" || id === "null" || seen.has(id)) return result;
       seen.add(id);
       result.push([
         id,
-        String(user?.username ?? ""),
-        String(user?.full_name ?? ""),
+        String(user?.username ?? user?.user?.username ?? user?.node?.username ?? ""),
+        String(user?.full_name ?? user?.user?.full_name ?? user?.node?.full_name ?? ""),
       ]);
       return result;
     }, []);
   }
 
-  function buildSnapshot({ viewerId, following = [], followers = [], createdAt = Date.now() }) {
-    return {
-      id: `${String(viewerId || "unknown")}:${createdAt}`,
-      viewerId: viewerId ? String(viewerId) : null,
-      createdAt,
-      following: compactSnapshotUsers(following),
-      followers: compactSnapshotUsers(followers),
+  function isSnapshotComplete(snapshot) {
+    if (
+      !snapshot ||
+      snapshot.schemaVersion !== 2 ||
+      snapshot.integrity?.complete !== true ||
+      snapshot.integrity?.schemaVersion !== 2 ||
+      !snapshot.viewerId ||
+      !Array.isArray(snapshot.following) ||
+      !Array.isArray(snapshot.followers)
+    ) return false;
+
+    return ["following", "followers"].every((key) => {
+      const scan = snapshot.integrity[key];
+      const list = snapshot[key];
+      if (
+        !scan ||
+        scan.complete !== true ||
+        String(scan.viewerId || "") !== String(snapshot.viewerId) ||
+        !Number.isInteger(scan.pages) ||
+        scan.pages < 1 ||
+        scan.count !== list.length
+      ) return false;
+
+      const ids = new Set();
+      for (const entry of list) {
+        if (!Array.isArray(entry) || entry.length < 1) return false;
+        const id = String(entry[0] ?? "").trim();
+        if (!id || id === "undefined" || id === "null" || ids.has(id)) return false;
+        ids.add(id);
+      }
+      return true;
+    });
+  }
+
+  function buildSnapshot({ viewerId, following = [], followers = [], scan = null, createdAt = Date.now() }) {
+    const accountId = viewerId == null ? "" : String(viewerId).trim();
+    const compactFollowing = compactSnapshotUsers(following);
+    const compactFollowers = compactSnapshotUsers(followers);
+    const integrity = {
+      schemaVersion: 2,
+      complete: Boolean(accountId && scan?.following?.complete === true && scan?.followers?.complete === true),
+      following: scan?.following || null,
+      followers: scan?.followers || null,
     };
+    const snapshot = {
+      id: `${accountId || "unknown"}:${createdAt}`,
+      viewerId: accountId || null,
+      schemaVersion: 2,
+      integrity,
+      createdAt,
+      following: compactFollowing,
+      followers: compactFollowers,
+    };
+    if (isSnapshotComplete(snapshot)) return snapshot;
+    integrity.complete = false;
+    return snapshot;
   }
 
   function snapshotMap(list = []) {
@@ -973,14 +1043,20 @@ if (!window.__manageInstagramFollowersStorageBridge) {
   }
 
   function diffSnapshots(previous, current) {
-    if (!previous || !current) {
-      return {
-        comparable: false,
-        following: { added: [], removed: [] },
-        followers: { added: [], removed: [] },
-        lostStillFollowing: [],
-        bothRemoved: [],
-      };
+    const emptyDiff = (reason) => ({
+      comparable: false,
+      reason,
+      following: { added: [], removed: [] },
+      followers: { added: [], removed: [] },
+      lostStillFollowing: [],
+      bothRemoved: [],
+    });
+    if (!previous || !current) return emptyDiff("baseline");
+    if (!isSnapshotComplete(previous) || !isSnapshotComplete(current)) {
+      return emptyDiff("unverified");
+    }
+    if (String(previous.viewerId) !== String(current.viewerId)) {
+      return emptyDiff("different-viewer");
     }
 
     const following = diffSnapshotLists(previous.following, current.following);
@@ -990,6 +1066,7 @@ if (!window.__manageInstagramFollowersStorageBridge) {
 
     return {
       comparable: true,
+      reason: null,
       following,
       followers,
       // Accounts that stopped following the viewer but remain in the viewer's
@@ -1032,6 +1109,7 @@ if (!window.__manageInstagramFollowersStorageBridge) {
     countRelationships,
     diffSnapshots,
     diffSnapshotLists,
+    isSnapshotComplete,
     filterUsers,
     getAccountSignals,
     getRelationshipState,
@@ -1154,8 +1232,18 @@ if (!window.__manageInstagramFollowersStorageBridge) {
   const sleep = (ms, signal) =>
     new Promise((resolve, reject) => {
       if (signal?.aborted) return reject(makeAbortError());
-      const timer = setTimeout(resolve, ms);
-      signal?.addEventListener("abort", () => { clearTimeout(timer); reject(makeAbortError()); }, { once: true });
+      let timer;
+      const cleanup = () => signal?.removeEventListener("abort", onAbort);
+      const onAbort = () => {
+        clearTimeout(timer);
+        cleanup();
+        reject(makeAbortError());
+      };
+      timer = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, ms);
+      signal?.addEventListener("abort", onAbort, { once: true });
     });
   function makeAbortError() {
     const error = new Error("Cancelled");
@@ -1285,7 +1373,6 @@ if (!window.__manageInstagramFollowersStorageBridge) {
     const candidates = [
       data?.data?.user?.edge_followed_by?.edges,
       data?.data?.user?.edge_follow?.edges,
-      data?.data?.user?.edge_follow?.edges,
     ];
     const edges = candidates.find(Array.isArray);
     return edges ? edges.map((edge) => edge?.node).filter(Boolean) : null;
@@ -1302,45 +1389,54 @@ if (!window.__manageInstagramFollowersStorageBridge) {
   }
 
   function getNextCursor(data) {
-    const pageInfo =
-      data?.page_info ||
-      data?.pagination?.page_info ||
-      data?.data?.page_info ||
-      data?.data?.user?.edge_followed_by?.page_info ||
-      data?.data?.user?.edge_follow?.page_info;
+    const pageInfos = [
+      data?.page_info,
+      data?.pagination?.page_info,
+      data?.data?.page_info,
+      data?.data?.pagination?.page_info,
+      data?.data?.user?.edge_followed_by?.page_info,
+      data?.data?.user?.edge_follow?.page_info,
+    ].filter(Boolean);
 
-    return (
-      data?.next_max_id ??
-      data?.pagination?.next_max_id ??
-      data?.next_cursor ??
-      data?.pagination_token ??
-      pageInfo?.end_cursor ??
-      null
-    );
+    const cursors = [
+      data?.next_max_id,
+      data?.pagination?.next_max_id,
+      data?.data?.next_max_id,
+      data?.next_cursor,
+      data?.pagination_token,
+      ...pageInfos.flatMap((pageInfo) => [
+        pageInfo.end_cursor,
+        pageInfo.next_max_id,
+        pageInfo.next_cursor,
+      ]),
+    ];
+    return cursors.find((value) => value != null && String(value).trim() !== "") ?? null;
   }
 
   function hasMore(data, cursor) {
-    // Prefer explicit pagination flags. If Instagram says another page exists
-    // but omits the cursor, requestConnections() will reject the scan instead
-    // of quietly treating a partial list as complete.
-    if (
-      data?.has_more === true ||
-      data?.more_available === true ||
-      data?.pagination?.has_more === true ||
-      data?.pagination?.more_available === true ||
-      data?.page_info?.has_next_page === true ||
-      data?.data?.page_info?.has_next_page === true ||
-      data?.data?.user?.edge_followed_by?.page_info?.has_next_page === true ||
-      data?.data?.user?.edge_follow?.page_info?.has_next_page === true
-    ) return true;
+    const pageInfos = [
+      data?.page_info,
+      data?.pagination?.page_info,
+      data?.data?.page_info,
+      data?.data?.pagination?.page_info,
+      data?.data?.user?.edge_followed_by?.page_info,
+      data?.data?.user?.edge_follow?.page_info,
+    ].filter(Boolean);
+    const flags = [
+      data?.has_more,
+      data?.more_available,
+      data?.pagination?.has_more,
+      data?.pagination?.more_available,
+      data?.data?.has_more,
+      data?.data?.more_available,
+      ...pageInfos.map((pageInfo) => pageInfo.has_next_page ?? pageInfo.hasNextPage),
+    ];
 
-    if (data?.has_more === false || data?.more_available === false) return false;
-    if (data?.pagination?.has_more === false || data?.pagination?.more_available === false) return false;
-    if (data?.page_info?.has_next_page === false) return false;
-    if (data?.data?.page_info?.has_next_page === false) return false;
-    if (data?.data?.user?.edge_followed_by?.page_info?.has_next_page === false) return false;
-    if (data?.data?.user?.edge_follow?.page_info?.has_next_page === false) return false;
-    return Boolean(cursor);
+    // An explicit positive signal always wins. Without a positive or negative
+    // terminal signal, a cursor means another page; no cursor is ambiguous.
+    if (flags.some((flag) => flag === true)) return true;
+    if (flags.some((flag) => flag === false)) return false;
+    return cursor ? true : null;
   }
 
   function isUsableListPayload(data) {
@@ -1470,7 +1566,9 @@ if (!window.__manageInstagramFollowersStorageBridge) {
   }
 
   async function requestConnections(type, onProgress, options = {}) {
-    const { signal, pageDelayMs = 350 } = options;
+    // A shorter, jittered gap improves large-list scans without removing the
+    // exponential back-off used for 429s, timeouts, and transient server errors.
+    const { signal, pageDelayMs = 150 } = options;
     const viewerId = await resolveViewerId();
 
     const users = [];
@@ -1505,8 +1603,17 @@ if (!window.__manageInstagramFollowersStorageBridge) {
 
       let added = 0;
       for (const rawUser of result.users) {
-        const id = String(rawUser?.id ?? rawUser?.pk ?? rawUser?.user?.id ?? rawUser?.user?.pk ?? "");
-        if (!id || seen.has(id)) continue;
+        const nested = rawUser?.user && typeof rawUser.user === "object"
+          ? rawUser.user
+          : rawUser?.node && typeof rawUser.node === "object"
+          ? rawUser.node
+          : rawUser;
+        const rawId = nested?.id ?? nested?.pk ?? rawUser?.id ?? rawUser?.pk;
+        const id = rawId == null ? "" : String(rawId).trim();
+        if (!id || id === "undefined" || id === "null") {
+          throw new Error(`Incomplete ${type.toLowerCase()} scan: Instagram returned an account without a stable ID. No snapshot was recorded.`);
+        }
+        if (seen.has(id)) continue;
         seen.add(id);
         users.push(rawUser);
         added += 1;
@@ -1525,7 +1632,10 @@ if (!window.__manageInstagramFollowersStorageBridge) {
 
       // Never cache or snapshot a partial list. These guards used to stop the
       // loop silently, which made missing pages look like genuine relationship changes.
-      if (!result.hasMore) {
+      if (result.hasMore === null) {
+        throw new Error(`Incomplete ${type.toLowerCase()} scan: Instagram did not provide a reliable pagination end signal. Refresh and retry; no history event was recorded.`);
+      }
+      if (result.hasMore === false) {
         nextCursor = null;
       } else {
         const cursor = result.nextCursor == null ? "" : String(result.nextCursor);
@@ -1544,7 +1654,7 @@ if (!window.__manageInstagramFollowersStorageBridge) {
 
         seenCursors.add(cursor);
         nextCursor = cursor;
-        await sleep(pageDelayMs + Math.random() * 250, signal);
+        await sleep(pageDelayMs + Math.random() * 150, signal);
       }
     } while (nextCursor);
 
@@ -1553,6 +1663,9 @@ if (!window.__manageInstagramFollowersStorageBridge) {
       providerId,
       pages: page,
       viewerId,
+      count: users.length,
+      complete: true,
+      completedAt: Date.now(),
     };
   }
 
@@ -1761,10 +1874,11 @@ const translations = {
     snapshotSaved: "Snapshot saved locally.",
     history: "History",
     historyTitle: "Scan history",
-    historySubtitle: "Choose a scan to see changes in your Followers and Following lists, including accounts that disappeared from one or both lists.",
+    historySubtitle: "History compares account membership between two complete scans. It is not an Instagram activity log and cannot prove when you tapped Follow.",
     closeHistory: "Close history",
     historyNoData: "No snapshots yet. Run a complete scan and save one.",
     historyFirst: "Baseline snapshot",
+    historyUnverified: "Older snapshot — completeness cannot be verified",
     historyChanges: "+{added} new · −{removed} removed",
     followersGained: "Followers gained",
     followersLost: "Followers lost",
@@ -1795,7 +1909,7 @@ const translations = {
     tabRemovedBoth: "Gone from both lists",
     tabNewFollowers: "New followers",
     tabFollowingRemoved: "No longer in your Following list",
-    tabYouFollowed: "You followed",
+    tabFollowingAdded: "New in Following",
     detailEmpty: "Nobody in this group.",
     openProfile: "Open profile",
     youStillFollow: "You still follow them",
@@ -1805,7 +1919,7 @@ const translations = {
     removedBothNote: "These accounts disappeared from both your Followers and Following lists in this interval. Instagram does not reveal the reason.",
     newNote: "Accounts that started following you since the previous snapshot.",
     followingRemovedNote: "These accounts are no longer present in your Following list compared with the previous snapshot. This does not by itself prove why they disappeared.",
-    youFollowedNote: "Accounts you started following since the previous snapshot.",
+    followingAddedNote: "These accounts appear in this complete Following snapshot but not the previous complete snapshot. This only shows list membership changed between scans; it does not prove when or whether you tapped Follow.",
     copyUsernames: "Copy usernames",
     usernamesCopied: "Usernames copied.",
     lostFollowersAlert: "{count} accounts are no longer in your Followers list since the last snapshot. Open History to review the changes.",
@@ -1869,6 +1983,7 @@ const translations = {
       "Log in to Instagram, then reopen the extension to manage your connections.",
     loadError:
       "Instagram couldn’t load this list. Wait a moment and try again.",
+    storageLoadFailed: "Could not load this Instagram account’s local history. No history was changed; please try again.",
     mutual: "You follow each other",
     notFollowingYou: "Doesn’t follow you back",
     youDontFollow: "You don’t follow back",
@@ -1939,10 +2054,11 @@ const translations = {
     snapshotSaved: "บันทึกสแนปช็อตในเครื่องแล้ว",
     history: "ประวัติ",
     historyTitle: "ประวัติการสแกน",
-    historySubtitle: "เลือกช่วงเวลาที่สแกน เพื่อดูการเปลี่ยนแปลงในรายชื่อผู้ติดตามและกำลังติดตาม รวมถึงบัญชีที่หายไปจากหนึ่งหรือทั้งสองรายการ",
+    historySubtitle: "ประวัตินี้เปรียบเทียบสมาชิกในรายชื่อจากการสแกนที่สมบูรณ์สองครั้ง ไม่ใช่บันทึกกิจกรรมของ Instagram จึงยืนยันไม่ได้ว่าคุณกดติดตามเมื่อใด",
     closeHistory: "ปิดประวัติ",
     historyNoData: "ยังไม่มีสแนปช็อต ลองสแกนให้ครบแล้วบันทึกไว้หนึ่งรายการ",
     historyFirst: "สแนปช็อตเริ่มต้น",
+    historyUnverified: "สแนปช็อตเก่า — ตรวจสอบความครบถ้วนไม่ได้",
     historyChanges: "+{added} ใหม่ · −{removed} ลบออก",
     followersGained: "ผู้ติดตามเพิ่มขึ้น",
     followersLost: "ผู้ติดตามที่หายไป",
@@ -1973,7 +2089,7 @@ const translations = {
     tabRemovedBoth: "หายจากทั้งสองรายการ",
     tabNewFollowers: "ผู้ติดตามใหม่",
     tabFollowingRemoved: "หายไปจากรายชื่อที่คุณติดตาม",
-    tabYouFollowed: "คุณติดตามเพิ่ม",
+    tabFollowingAdded: "พบเพิ่มในรายชื่อกำลังติดตาม",
     detailEmpty: "ไม่มีใครในกลุ่มนี้",
     openProfile: "เปิดโปรไฟล์",
     youStillFollow: "คุณยังติดตามเขาอยู่",
@@ -1983,7 +2099,7 @@ const translations = {
     removedBothNote: "บัญชีเหล่านี้หายไปจากทั้งรายชื่อผู้ติดตามและกำลังติดตามในช่วงเดียวกัน Instagram ไม่ได้บอกสาเหตุ",
     newNote: "บัญชีที่เริ่มติดตามคุณตั้งแต่สแนปช็อตก่อนหน้า",
     followingRemovedNote: "บัญชีเหล่านี้ไม่อยู่ในรายชื่อที่คุณกำลังติดตามเมื่อเทียบกับสแนปช็อตก่อนหน้า ข้อมูลนี้ไม่ได้ยืนยันสาเหตุที่บัญชีหายไป",
-    youFollowedNote: "บัญชีที่คุณเริ่มติดตามตั้งแต่สแนปช็อตก่อนหน้า",
+    followingAddedNote: "บัญชีเหล่านี้ปรากฏในรายชื่อกำลังติดตามของสแนปช็อตที่สมบูรณ์ล่าสุด แต่ไม่พบในสแนปช็อตก่อนหน้า ข้อมูลนี้บอกได้เพียงว่าสมาชิกในรายชื่อเปลี่ยนไประหว่างการสแกน ไม่ได้ยืนยันว่าคุณกดติดตามบัญชีเหล่านี้เมื่อใดหรือเป็นผู้กดติดตามเอง",
     copyUsernames: "คัดลอกชื่อผู้ใช้",
     usernamesCopied: "คัดลอกชื่อผู้ใช้แล้ว",
     lostFollowersAlert: "มี {count} บัญชีที่ไม่อยู่ในรายชื่อผู้ติดตามตั้งแต่สแนปช็อตล่าสุด เปิดประวัติเพื่อตรวจดูการเปลี่ยนแปลง",
@@ -2047,6 +2163,7 @@ const translations = {
       "กรุณาเข้าสู่ระบบ Instagram แล้วเปิดส่วนขยายอีกครั้งเพื่อจัดการรายชื่อของคุณ",
     loadError:
       "Instagram โหลดรายการนี้ไม่สำเร็จ โปรดรอสักครู่แล้วลองอีกครั้ง",
+    storageLoadFailed: "โหลดประวัติในเครื่องของบัญชี Instagram นี้ไม่สำเร็จ ไม่มีการแก้ไขประวัติ โปรดลองอีกครั้ง",
     mutual: "ติดตามกันและกัน",
     notFollowingYou: "ไม่ได้ติดตามคุณกลับ",
     youDontFollow: "คุณยังไม่ได้ติดตามกลับ",
@@ -2516,6 +2633,19 @@ async function openList(type, initialFilter = "all") {
     showNotice(t("loginRequired"));
     return;
   }
+  const accountId = String(viewerId);
+  if (loadedStateAccountId !== accountId) {
+    // Clear old account data before awaiting storage. Keep each account's
+    // snapshots and protected-user list isolated within the same browser tab.
+    resetUI();
+    snapshotHistory = [];
+    latestDiff = null;
+    const stateLoaded = await requestStoredState(accountId);
+    if (!stateLoaded || loadedStateAccountId !== accountId) {
+      showNotice(t("storageLoadFailed"), "error");
+      return;
+    }
+  }
   // Now that the Instagram account is known, let the server check it against the key's account limit.
   license = await licenseRequest("status");
   renderLicenseState();
@@ -2574,6 +2704,10 @@ const connectionCacheUpdatedAt = {
   Followers: 0,
 };
 const connectionCacheViewerId = {
+  Following: null,
+  Followers: null,
+};
+const connectionScanMeta = {
   Following: null,
   Followers: null,
 };
@@ -2695,7 +2829,26 @@ async function requestConnections(type, signal) {
 
   diagnostics.lastEndpoint = `${type.toLowerCase()} list via ${result.providerId}`;
   diagnostics.lastStatus = 200;
-  return result.users.map((user) => normalizeConnectionUser(user, type));
+  const users = result.users.map((user) => normalizeConnectionUser(user, type));
+  if (
+    !result.complete ||
+    !result.viewerId ||
+    String(result.viewerId) !== String(viewerId) ||
+    users.some((user) => !user) ||
+    users.length !== result.count
+  ) {
+    throw new Error(`Incomplete ${type.toLowerCase()} scan: account IDs or scan metadata failed validation. No snapshot was saved.`);
+  }
+  return {
+    users,
+    scan: {
+      complete: true,
+      viewerId: String(result.viewerId),
+      pages: result.pages,
+      count: users.length,
+      completedAt: result.completedAt,
+    },
+  };
 }
 
 function cancelLoading() {
@@ -2716,23 +2869,32 @@ async function ensureConnections(type, signal) {
   if (connectionCacheViewerId[type] !== cacheOwner) {
     connectionCache[type] = null;
     connectionCacheUpdatedAt[type] = 0;
+    connectionScanMeta[type] = null;
     connectionCacheViewerId[type] = cacheOwner;
   }
 
   const cacheIsFresh =
     connectionCache[type] &&
+    connectionScanMeta[type]?.complete === true &&
+    connectionScanMeta[type]?.viewerId === cacheOwner &&
+    connectionScanMeta[type]?.count === connectionCache[type].size &&
     Date.now() - connectionCacheUpdatedAt[type] < connectionCacheTtl;
   if (cacheIsFresh) return connectionCache[type];
   connectionCache[type] = null;
+  connectionScanMeta[type] = null;
 
   if (!connectionRequests[type]) {
     const request = requestConnections(type, signal)
-      .then((users) => {
-        if (cacheOwner !== String(viewerId || "")) {
+      .then(({ users, scan }) => {
+        if (cacheOwner !== String(viewerId || "") || scan.viewerId !== cacheOwner) {
           throw new Error("Instagram account changed during the scan. Please scan again.");
         }
         const connections = new Map(users.map((user) => [user.id, user]));
+        if (connections.size !== scan.count) {
+          throw new Error(`Incomplete ${type.toLowerCase()} scan: duplicate or invalid account IDs were detected.`);
+        }
         connectionCache[type] = connections;
+        connectionScanMeta[type] = scan;
         connectionCacheUpdatedAt[type] = Date.now();
         return connections;
       })
@@ -2852,20 +3014,44 @@ function saveCurrentSnapshot(force = false) {
   const followers = connectionCache.Followers
     ? [...connectionCache.Followers.values()]
     : [];
-  if (!connectionCache.Following || !connectionCache.Followers) {
+  const followingScan = connectionScanMeta.Following;
+  const followersScan = connectionScanMeta.Followers;
+  const scansAreVerified = [followingScan, followersScan].every((scan) =>
+    scan?.complete === true &&
+    scan.viewerId === String(viewerId || "") &&
+    Number.isInteger(scan.pages) &&
+    scan.pages > 0
+  );
+  if (
+    !connectionCache.Following ||
+    !connectionCache.Followers ||
+    !scansAreVerified ||
+    followingScan.count !== following.length ||
+    followersScan.count !== followers.length
+  ) {
     showNotice(t("refreshBeforeHistory"), "warning");
     return false;
   }
 
   const snapshot = core.buildSnapshot({
-    viewerId: viewerId,
+    viewerId,
     following,
     followers,
+    scan: { following: followingScan, followers: followersScan },
   });
+  if (!core.isSnapshotComplete(snapshot)) {
+    showNotice(t("refreshBeforeHistory"), "warning");
+    return false;
+  }
   const previous = snapshotHistory[0]?.viewerId === snapshot.viewerId
     ? snapshotHistory[0]
     : null;
-  if (!force && previous && snapshotFingerprint(previous) === snapshotFingerprint(snapshot)) {
+  if (
+    !force &&
+    previous &&
+    core.isSnapshotComplete(previous) &&
+    snapshotFingerprint(previous) === snapshotFingerprint(snapshot)
+  ) {
     latestDiff = core.diffSnapshots(previous, snapshot);
     return false;
   }
@@ -2997,11 +3183,12 @@ function exportJson() {
 function exportBackup() {
   const payload = {
     format: "manage-instagram-followers-backup",
-    version: 1,
+    version: 2,
+    accountId: viewerId ? String(viewerId) : null,
     createdAt: new Date().toISOString(),
     locale: currentLocale,
     whitelist: [...protectedUserIds],
-    snapshots: snapshotHistory,
+    snapshots: snapshotHistory.filter((snapshot) => String(snapshot?.viewerId || "") === String(viewerId || "")),
     settings,
   };
   downloadText(
@@ -3022,9 +3209,18 @@ function restoreBackup(file) {
         !Array.isArray(payload.whitelist) ||
         !Array.isArray(payload.snapshots)
       ) throw new Error("invalid backup");
-      protectedUserIds.clear();
-      payload.whitelist.map(String).filter(Boolean).slice(0, 5000).forEach((id) => protectedUserIds.add(id));
-      snapshotHistory = payload.snapshots.slice(0, 12);
+      const targetAccountId = String(viewerId || "");
+      if (payload.accountId && String(payload.accountId) !== targetAccountId) {
+        throw new Error("This backup belongs to a different Instagram account.");
+      }
+      const matchingSnapshots = payload.snapshots.filter(
+        (snapshot) => snapshot?.viewerId && String(snapshot.viewerId) === targetAccountId
+      );
+      if (payload.accountId && String(payload.accountId) === targetAccountId) {
+        protectedUserIds.clear();
+        payload.whitelist.map(String).filter(Boolean).slice(0, 5000).forEach((id) => protectedUserIds.add(id));
+      }
+      snapshotHistory = matchingSnapshots.slice(0, 12);
       settings = payload.settings && typeof payload.settings === "object" ? payload.settings : {};
       latestDiff = core.diffSnapshots(snapshotHistory[1], snapshotHistory[0]);
       persistState();
@@ -3074,10 +3270,10 @@ function renderHistory() {
           ${diff.bothRemoved.length ? `<span class="hchip hchip-lost">${icon("user-minus", 13)}${diff.bothRemoved.length} ${t("tabRemovedBoth")}</span>` : ""}
           ${gained ? `<span class="hchip hchip-new">${icon("user-plus", 13)}+${gained} ${t("tabNewFollowers")}</span>` : ""}
           ${diff.following.removed.length ? `<span class="hchip">${icon("user-minus", 13)}−${diff.following.removed.length} ${t("tabFollowingRemoved")}</span>` : ""}
-          ${diff.following.added.length ? `<span class="hchip">${icon("user-check", 13)}+${diff.following.added.length} ${t("tabYouFollowed")}</span>` : ""}
+          ${diff.following.added.length ? `<span class="hchip">${icon("user-check", 13)}+${diff.following.added.length} ${t("tabFollowingAdded")}</span>` : ""}
           ${!lost && !gained && !diff.following.added.length && !diff.following.removed.length ? `<span class="hchip">${t("noChanges")}</span>` : ""}
         </div>`
-      : `<div class="history-chips"><span class="hchip">${t("historyFirst")}</span></div>`;
+      : `<div class="history-chips"><span class="hchip">${t(diff.reason === "unverified" ? "historyUnverified" : "historyFirst")}</span></div>`;
     const body = `
       <div class="history-when"><strong>${index === 0 ? t("currentSnapshot") : dateLabel}</strong>${index === 0 ? `<span>${dateLabel}</span>` : ""}</div>
       <div class="history-counts"><span>${formatNumber(snapshot.followers?.length || 0)} ${t("followersStat")}</span><span>${formatNumber(snapshot.following?.length || 0)} ${t("followingStat")}</span></div>
@@ -3103,7 +3299,7 @@ const DETAIL_TABS = [
   { id: "bothRemoved", label: "tabRemovedBoth", note: "removedBothNote", icon: "user-minus", tone: "lost" },
   { id: "new", label: "tabNewFollowers", note: "newNote", icon: "user-plus", tone: "new" },
   { id: "followingRemoved", label: "tabFollowingRemoved", note: "followingRemovedNote", icon: "user-minus", tone: "neutral" },
-  { id: "followed", label: "tabYouFollowed", note: "youFollowedNote", icon: "user-check", tone: "neutral" },
+  { id: "followed", label: "tabFollowingAdded", note: "followingAddedNote", icon: "user-check", tone: "neutral" },
 ];
 
 function getDetailGroups(index) {
@@ -3688,6 +3884,9 @@ const followUser = async (userId, button) => {
     user.requested_by_viewer = false;
     connectionCache.Following?.set(userId, user);
     connectionCacheUpdatedAt.Following = Date.now();
+    if (connectionScanMeta.Following?.complete) {
+      connectionScanMeta.Following.count = connectionCache.Following.size;
+    }
     updateFilterCounts();
     renderCurrentUsers();
     return true;
@@ -3714,6 +3913,8 @@ document.getElementById("refreshButton").addEventListener("click", async () => {
   connectionCache.Followers = null;
   connectionCacheUpdatedAt.Following = 0;
   connectionCacheUpdatedAt.Followers = 0;
+  connectionScanMeta.Following = null;
+  connectionScanMeta.Followers = null;
   // Must pass a fresh generation: without it fetchConnections bails out after
   // loading and never hides the loader (the "reload spins forever" bug).
   await fetchConnections(caller, ++viewGeneration);
@@ -3887,56 +4088,80 @@ licenseRequest("status").then((result) => {
   if (!result.active) setTimeout(() => ensureLicensed(), 3400); // after the preloader
 });
 
-const storageRequestId = crypto.randomUUID();
-window.addEventListener(
-  "message",
-  (event) => {
-    if (
-      event.source !== window ||
-      !event.data?.mifStorage ||
-      event.data.action !== "state" ||
-      event.data.requestId !== storageRequestId
-    ) {
-      return;
-    }
-    const storedLocale = event.data.payload?.locale;
-    if (storedLocale === "en" || storedLocale === "th") {
-      setLocale(storedLocale, false);
-    }
-    const storedLimits = event.data.payload?.rateLimits;
-    followAttempts = Array.isArray(storedLimits?.follow) ? storedLimits.follow : [];
-    protectedUserIds.clear();
-    (Array.isArray(event.data.payload?.whitelist) ? event.data.payload.whitelist : [])
-      .map(String)
-      .filter(Boolean)
-      .slice(0, 5000)
-      .forEach((id) => protectedUserIds.add(id));
-    snapshotHistory = Array.isArray(event.data.payload?.snapshots)
-      ? event.data.payload.snapshots.slice(0, 12)
-      : [];
-    settings = event.data.payload?.settings && typeof event.data.payload.settings === "object"
-      ? event.data.payload.settings
-      : {};
-    const storedOrb = settings.orbPos;
-    if (storedOrb && Number.isFinite(storedOrb.fx) && Number.isFinite(storedOrb.fy)) {
-      orbPos = { fx: Math.min(1, Math.max(0, storedOrb.fx)), fy: Math.min(1, Math.max(0, storedOrb.fy)) };
-      if (isMinimized) placeOrb();
-    }
-    latestDiff = core.diffSnapshots(snapshotHistory[1], snapshotHistory[0]);
-    renderHistory();
-    renderCurrentUsers();
-  },
-  { signal: lifecycle.signal }
-);
-window.postMessage(
-  {
-    mifStorage: true,
-    action: "get",
-    requestId: storageRequestId,
-    payload: { accountId: viewerId || "default" },
-  },
-  window.location.origin
-);
+let loadedStateAccountId = null;
+let stateLoadGeneration = 0;
+
+function applyStoredState(payload, accountId) {
+  const storedLocale = payload?.locale;
+  if (storedLocale === "en" || storedLocale === "th") setLocale(storedLocale, false);
+
+  const storedLimits = payload?.rateLimits;
+  followAttempts = Array.isArray(storedLimits?.follow) ? storedLimits.follow : [];
+
+  protectedUserIds.clear();
+  (Array.isArray(payload?.whitelist) ? payload.whitelist : [])
+    .map(String).filter(Boolean).slice(0, 5000)
+    .forEach((id) => protectedUserIds.add(id));
+
+  snapshotHistory = (Array.isArray(payload?.snapshots) ? payload.snapshots : [])
+    .filter((snapshot) => accountId === "default"
+      ? !snapshot?.viewerId
+      : snapshot?.viewerId && String(snapshot.viewerId) === accountId)
+    .slice(0, 12);
+
+  settings = payload?.settings && typeof payload.settings === "object" ? payload.settings : {};
+  const storedOrb = settings.orbPos;
+  if (storedOrb && Number.isFinite(storedOrb.fx) && Number.isFinite(storedOrb.fy)) {
+    orbPos = { fx: Math.min(1, Math.max(0, storedOrb.fx)), fy: Math.min(1, Math.max(0, storedOrb.fy)) };
+    if (isMinimized) placeOrb();
+  }
+
+  loadedStateAccountId = accountId;
+  latestDiff = core.diffSnapshots(snapshotHistory[1], snapshotHistory[0]);
+  renderHistory();
+  renderCurrentUsers();
+}
+
+function requestStoredState(accountId) {
+  const targetAccount = String(accountId || "default");
+  const requestId = crypto.randomUUID();
+  const generation = ++stateLoadGeneration;
+
+  return new Promise((resolve) => {
+    let timer = null;
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      if (timer) clearTimeout(timer);
+    };
+    const onMessage = (event) => {
+      if (
+        event.source !== window ||
+        !event.data?.mifStorage ||
+        event.data.action !== "state" ||
+        event.data.requestId !== requestId
+      ) return;
+
+      cleanup();
+      if (generation !== stateLoadGeneration) return resolve(false);
+      applyStoredState(event.data.payload || {}, targetAccount);
+      resolve(true);
+    };
+
+    window.addEventListener("message", onMessage, { signal: lifecycle.signal });
+    timer = setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, 5000);
+    window.postMessage({
+      mifStorage: true,
+      action: "get",
+      requestId,
+      payload: { accountId: targetAccount },
+    }, window.location.origin);
+  });
+}
+
+void requestStoredState(viewerId || "default");
 
 document
   .getElementById("copyDiagnosticsButton")
@@ -3944,7 +4169,7 @@ document
     const counts = core.countRelationships([...loadedUsers.values()]);
     const report = {
       extension: "IG Snapper",
-      version: "2.3.2",
+      version: "2.3.3",
       locale: currentLocale,
       view: caller || "home",
       filter: currentFilter,

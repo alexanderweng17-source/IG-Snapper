@@ -12,12 +12,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const accountId = String(message.payload?.accountId || "default");
       const accountWhitelist = localState.whitelists?.[accountId];
       const accountSnapshots = Array.isArray(localState.snapshots)
-        ? localState.snapshots.filter((snapshot) => !snapshot?.viewerId || String(snapshot.viewerId) === accountId)
+        ? localState.snapshots.filter((snapshot) => accountId === "default"
+          ? !snapshot?.viewerId
+          : snapshot?.viewerId && String(snapshot.viewerId) === accountId)
         : [];
       sendResponse({
         locale: localState.locale,
         rateLimits: sessionState.rateLimits,
-        whitelist: Array.isArray(accountWhitelist) ? accountWhitelist : (localState.whitelist || []),
+        whitelist: Array.isArray(accountWhitelist)
+          ? accountWhitelist
+          : accountId === "default" && Array.isArray(localState.whitelist)
+          ? localState.whitelist
+          : [],
         snapshots: accountSnapshots,
         settings: localState.settings || {},
       });

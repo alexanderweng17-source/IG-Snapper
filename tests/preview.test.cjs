@@ -45,3 +45,30 @@ test("download preview retains its Thai copy after generation", () => {
   assert.ok(thaiCount >= 4500, `expected Thai copy, found ${thaiCount} characters`);
   assert.ok(!preview.includes("??????"));
 });
+
+test("store copy reflects Snapshot semantics, device editions and closed checkout", () => {
+  assert.ok(preview.includes("Chrome คอมพิวเตอร์ · Safari iPhone/iPad (Userscripts) · v2.3.3"));
+  assert.ok(preview.includes("ไม่ใช่บันทึกกิจกรรมจาก Instagram"));
+  assert.ok(preview.includes("Update/Available Updates"));
+  assert.ok(preview.includes("ขณะนี้ร้านยังไม่เปิดรับชำระเงินจริง"));
+  assert.ok(preview.includes('aria-disabled="true"'));
+  assert.ok(!preview.includes('href="/checkout?plan='));
+  assert.ok(!preview.includes("เลิกติดตามคุณ"));
+});
+
+test("Chrome, iOS, Store and protected route are pinned to one release version", () => {
+  const root = require("node:path").join(__dirname, "..");
+  const manifest = JSON.parse(fs.readFileSync(require("node:path").join(root, "extension/chrome/manifest.json"), "utf8"));
+  const site = fs.readFileSync(require("node:path").join(root, "src/content/site.ts"), "utf8");
+  const nextConfig = fs.readFileSync(require("node:path").join(root, "next.config.mjs"), "utf8");
+  const userscript = fs.readFileSync(require("node:path").join(root, "public/downloads/ig-snapper.user.js"), "utf8");
+  assert.equal(manifest.version, "2.3.3");
+  assert.ok(site.includes('version: "2.3.3"'));
+  assert.ok(site.includes('IG-Snapper-v2.3.3-customer.zip'));
+  assert.ok(nextConfig.includes("./releases/v2.3.3/chrome/IG-Snapper-v2.3.3-customer.zip"));
+  const downloadRoute = fs.readFileSync(require("node:path").join(root, "src/app/api/downloads/chrome/route.ts"), "utf8");
+  assert.ok(downloadRoute.includes('"v2.3.3", "chrome", "IG-Snapper-v2.3.3-customer.zip"'));
+  assert.doesNotMatch(downloadRoute, /product\.version|product\.packageName/);
+  assert.match(userscript, /@version\s+2\.3\.3/);
+  assert.ok(userscript.includes("@updateURL    https://ig-snapper.vercel.app/downloads/ig-snapper.user.js"));
+});

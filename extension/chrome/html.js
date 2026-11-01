@@ -418,7 +418,11 @@ if (!window.__manageInstagramFollowersStorageBridge) {
         : {};
       whitelists[accountId] = sanitizedWhitelist;
       const existingSnapshotsState = await chrome.storage.local.get("snapshots");
-      const incomingSnapshots = Array.isArray(payload.snapshots) ? payload.snapshots.slice(0, 12) : [];
+      const incomingSnapshots = (Array.isArray(payload.snapshots) ? payload.snapshots : [])
+        .filter((snapshot) => accountId === "default"
+          ? !snapshot?.viewerId
+          : snapshot?.viewerId && String(snapshot.viewerId) === accountId)
+        .slice(0, 12);
       const otherAccountSnapshots = Array.isArray(existingSnapshotsState.snapshots)
         ? existingSnapshotsState.snapshots.filter((snapshot) => String(snapshot?.viewerId || "default") !== accountId)
         : [];
